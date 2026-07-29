@@ -46,6 +46,7 @@ import json
 import os
 import re
 import sys
+import time
 from collections import Counter
 from dataclasses import dataclass, field
 
@@ -238,6 +239,39 @@ def make_generator(provider: str, model: str, temp: float):
     raise SystemExit(f"error: unknown provider {provider!r}")
 
 
+def throttled(generate, rpm: int, retries: int = 5):
+    """Free-tier keys are tightly rate-limited (Gemini free tier: 5 req/min).
+
+    Pace requests to stay under the limit and retry on 429 with exponential backoff,
+    honouring the server's suggested delay when it gives one. Without this the probe
+    reports "no data" and looks like a null result when it is really a quota error --
+    a false kill is the worst outcome for a probe whose job is to kill honestly.
+    """
+    min_gap = 60.0 / rpm if rpm > 0 else 0.0
+    state = {"last": 0.0}
+
+    def call(prompt: str) -> str:
+        for attempt in range(retries):
+            wait = min_gap - (time.monotonic() - state["last"])
+            if wait > 0:
+                time.sleep(wait)
+            state["last"] = time.monotonic()
+            try:
+                return generate(prompt)
+            except Exception as e:  # noqa: BLE001
+                msg = str(e)
+                if "429" not in msg and "RESOURCE_EXHAUSTED" not in msg:
+                    raise
+                m = re.search(r"'retryDelay': '(\d+(?:\.\d+)?)s'", msg)
+                delay = float(m.group(1)) + 1 if m else min_gap * (2 ** attempt)
+                print(f"    rate limited, waiting {delay:.0f}s "
+                      f"(attempt {attempt + 1}/{retries})", flush=True)
+                time.sleep(delay)
+        raise RuntimeError(f"still rate limited after {retries} retries")
+
+    return call
+
+
 def run_arm(generate, sc: Scenario, arm: str, n: int) -> ArmResult:
     prompt = sc.original if arm == "cold_restart" else sc.log_summary
     res = ArmResult(scenario=sc.name, arm=arm)
@@ -305,12 +339,14 @@ def main() -> int:
     ap.add_argument("--trials", type=int, default=8, help="trials per scenario per arm")
     ap.add_argument("--temperature", type=float, default=1.0,
                     help="1.0 = realistic agent default; 0.0 = best case for hashing")
+    ap.add_argument("--rpm", type=int, default=5,
+                    help="requests/min cap (Gemini free tier: 5)")
     ap.add_argument("--dump", metavar="PATH", help="write raw payloads as JSON")
     args = ap.parse_args()
 
     model = args.model or {"gemini": "gemini-2.5-flash",
                            "anthropic": "claude-sonnet-5"}[args.provider]
-    generate = make_generator(args.provider, model, args.temperature)
+    generate = throttled(make_generator(args.provider, model, args.temperature), args.rpm)
     print(f"provider={args.provider} model={model} "
           f"trials={args.trials} temperature={args.temperature}")
 
