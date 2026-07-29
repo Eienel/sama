@@ -57,18 +57,38 @@ Each trial is a fresh conversation with no shared history. That *is* the context
 
 ## Running it
 
+Default provider is **Gemini** (free key at
+[aistudio.google.com/apikey](https://aistudio.google.com/apikey)):
+
 ```bash
-pip install anthropic
-export ANTHROPIC_API_KEY=sk-ant-...
+pip install google-genai
+export GEMINI_API_KEY=...
 
 python3 probe1/probe.py                          # 3 scenarios x 2 arms x 8 trials
 python3 probe1/probe.py --temperature 0.0        # best case for hashing
 python3 probe1/probe.py --dump raw.json          # keep payloads for inspection
 ```
 
+48 calls to `gemini-2.5-flash`, comfortably inside the free tier. Pass `--model` for a
+newer model (e.g. `gemini-3.5-flash`) if your key has access.
+
+Anthropic is also supported, which is worth using **as a second run, not a
+replacement**:
+
+```bash
+pip install anthropic
+export ANTHROPIC_API_KEY=sk-ant-...
+python3 probe1/probe.py --provider anthropic
+```
+
+A gap that shows up on Gemini *and* Claude is structural — a property of LLM
+regeneration itself. A gap on only one vendor is a sampler quirk and much weaker
+evidence. Cross-vendor agreement is the version of this result worth putting in a
+pitch.
+
 Run at `--temperature 1.0` first (the realistic agent default), then `0.0`. If the gap
-persists at temperature 0, the mechanism is structural rather than a sampling artifact
-— which is the strong result.
+persists at temperature 0, the mechanism isn't a sampling artifact either — that's the
+strong result.
 
 ## Reading the output
 

@@ -198,21 +198,54 @@ class ArmResult:
         return self._rate(semantic)
 
 
-def run_arm(client, model: str, sc: Scenario, arm: str, n: int, temp: float) -> ArmResult:
+def make_generator(provider: str, model: str, temp: float):
+    """Return a callable(prompt) -> raw text.
+
+    Provider-pluggable on purpose: if the mechanism is real it should show up on any
+    model, not just one vendor's sampler. A gap that appears on Gemini and Claude
+    alike is structural; one that appears on only one is an implementation quirk.
+    """
+    if provider == "gemini":
+        key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+        if not key:
+            raise SystemExit("error: set GEMINI_API_KEY (free key: https://aistudio.google.com/apikey)")
+        try:
+            from google import genai
+            from google.genai import types
+        except ImportError:
+            raise SystemExit("error: pip install google-genai")
+        client = genai.Client(api_key=key)
+        cfg = types.GenerateContentConfig(
+            system_instruction=SYSTEM, temperature=temp, max_output_tokens=512
+        )
+        return lambda prompt: client.models.generate_content(
+            model=model, contents=prompt, config=cfg
+        ).text
+
+    if provider == "anthropic":
+        if not os.environ.get("ANTHROPIC_API_KEY"):
+            raise SystemExit("error: set ANTHROPIC_API_KEY")
+        try:
+            from anthropic import Anthropic
+        except ImportError:
+            raise SystemExit("error: pip install anthropic")
+        client = Anthropic()
+        return lambda prompt: client.messages.create(
+            model=model, max_tokens=512, temperature=temp, system=SYSTEM,
+            messages=[{"role": "user", "content": prompt}],
+        ).content[0].text
+
+    raise SystemExit(f"error: unknown provider {provider!r}")
+
+
+def run_arm(generate, sc: Scenario, arm: str, n: int) -> ArmResult:
     prompt = sc.original if arm == "cold_restart" else sc.log_summary
     res = ArmResult(scenario=sc.name, arm=arm)
     for i in range(n):
         try:
-            # Each call is a fresh conversation with no shared history. That IS the
+            # Each call is a fresh request with no shared history. That IS the
             # context wipe -- there is nothing to carry over between trials.
-            msg = client.messages.create(
-                model=model,
-                max_tokens=512,
-                temperature=temp,
-                system=SYSTEM,
-                messages=[{"role": "user", "content": prompt}],
-            )
-            res.payloads.append(extract_json(msg.content[0].text))
+            res.payloads.append(extract_json(generate(prompt)))
         except Exception as e:  # noqa: BLE001 - a failed trial is data, not a crash
             res.errors.append(f"trial {i}: {type(e).__name__}: {e}")
     return res
@@ -267,32 +300,25 @@ def report(results: list[ArmResult]) -> int:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--model", default="claude-sonnet-5")
+    ap.add_argument("--provider", default="gemini", choices=("gemini", "anthropic"))
+    ap.add_argument("--model", default=None, help="default: gemini-2.5-flash / claude-sonnet-5")
     ap.add_argument("--trials", type=int, default=8, help="trials per scenario per arm")
     ap.add_argument("--temperature", type=float, default=1.0,
                     help="1.0 = realistic agent default; 0.0 = best case for hashing")
     ap.add_argument("--dump", metavar="PATH", help="write raw payloads as JSON")
     args = ap.parse_args()
 
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        print("error: ANTHROPIC_API_KEY is not set.\n"
-              "  export ANTHROPIC_API_KEY=sk-ant-...\n"
-              "  pip install anthropic", file=sys.stderr)
-        return 2
-    try:
-        from anthropic import Anthropic
-    except ImportError:
-        print("error: pip install anthropic", file=sys.stderr)
-        return 2
-
-    client = Anthropic()
-    print(f"model={args.model} trials={args.trials} temperature={args.temperature}")
+    model = args.model or {"gemini": "gemini-2.5-flash",
+                           "anthropic": "claude-sonnet-5"}[args.provider]
+    generate = make_generator(args.provider, model, args.temperature)
+    print(f"provider={args.provider} model={model} "
+          f"trials={args.trials} temperature={args.temperature}")
 
     results = []
     for sc in SCENARIOS:
         for arm in ("cold_restart", "log_replay"):
             print(f"  running {sc.name}/{arm} ...", flush=True)
-            results.append(run_arm(client, args.model, sc, arm, args.trials, args.temperature))
+            results.append(run_arm(generate, sc, arm, args.trials))
 
     if args.dump:
         with open(args.dump, "w") as f:
