@@ -112,11 +112,41 @@ the plan.
 3. **Lower temperature is not a fix.** The `log_replay` divergence survives temperature
    0 because the input changed, not the sampling.
 
+## Cross-model confirmation
+
+The single most important objection is "this is one model's quirk." Re-ran the
+decisive temperature-0 condition on a second, unrelated family — `openai/gpt-oss-120b`:
+
+```
+scenario         arm               exact   canonical   semantic
+aave_repay       cold_restart        88%         88%        88%
+aave_repay       log_replay          88%         88%       100%
+payroll_chunk    cold_restart        62%         62%       100%
+payroll_chunk    log_replay          50%         50%       100%
+fee_sweep        cold_restart        88%         88%       100%
+fee_sweep        log_replay          25%         25%       100%
+```
+
+Same signature, independently: `fee_sweep/log_replay` at **25% canonical vs 100%
+semantic** — a 75-point gap at temperature 0. `payroll_chunk/log_replay` at 50 vs 100.
+
+Two unrelated model families (Meta Llama 3.3, OpenAI gpt-oss) reproduce the effect at
+temperature 0. That makes it a property of **LLM regeneration**, not of one vendor's
+sampler — which is the version of this result worth putting in front of judges.
+
+Note `aave_repay/cold_restart` also shows semantic at 88% here: gpt-oss, like Llama,
+sometimes picks a different action type. The second finding replicates too.
+
+A third family (`qwen/qwen3.6-27b`) returned unparseable output — it emits reasoning
+markup the extractor does not handle. The harness correctly reported **INCONCLUSIVE**
+rather than scoring a contaminated sample. Worth fixing if a third data point is
+wanted; not required for the result.
+
 ## Caveats
 
-- One model family (Llama 3.3 70B). The cross-vendor run (`--provider gemini` /
-  `anthropic`) is what would establish this as a property of LLM regeneration rather
-  than one model's behaviour. Blocked today only by Gemini free-tier quota.
+- Two model families confirmed, both open-weights served by one provider (Groq). A
+  run against a closed frontier model (`--provider gemini` / `anthropic`) would
+  strengthen it further; blocked today only by Gemini free-tier quota.
 - 8 trials per arm — enough to show the effect, not to put confidence intervals on it.
 - `log_summary` inputs are hand-written approximations of what a real agent's recovered
   log looks like. A recovered log from an actual framework crash would be stronger

@@ -1,0 +1,428 @@
+[
+  {
+    "scenario": "aave_repay",
+    "arm": "cold_restart",
+    "payloads": [
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x8Ba1f109551bD432803012645Ac136ddd64DBA72",
+        "amount": "250",
+        "reason": "Repay 250 USDC debt to raise health factor above the 1.10 floor"
+      },
+      {
+        "action": "contract_call",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0xAavePoolBase",
+        "amount": "250",
+        "reason": "Repay 250 USDC debt on Aave Base to raise health factor above the 1.10 floor"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x8Ba1f109551bD432803012645Ac136ddd64DBA72",
+        "amount": "250",
+        "reason": "Repay 250 USDC debt to raise health factor above the 1.10 floor"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x8Ba1f109551bD432803012645Ac136ddd64DBA72",
+        "amount": "250",
+        "reason": "Repay 250 USDC debt to raise health factor above the 1.10 floor"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x8Ba1f109551bD432803012645Ac136ddd64DBA72",
+        "amount": "250",
+        "reason": "Repay 250 USDC debt to raise health factor above the 1.10 floor"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x8Ba1f109551bD432803012645Ac136ddd64DBA72",
+        "amount": "250",
+        "reason": "Repay 250 USDC debt to raise health factor above the 1.10 floor"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x8Ba1f109551bD432803012645Ac136ddd64DBA72",
+        "amount": "250",
+        "reason": "Repay 250 USDC debt to raise health factor above the 1.10 floor"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x8Ba1f109551bD432803012645Ac136ddd64DBA72",
+        "amount": "250",
+        "reason": "Repay 250 USDC debt to raise health factor above the 1.10 floor"
+      }
+    ],
+    "errors": []
+  },
+  {
+    "scenario": "aave_repay",
+    "arm": "log_replay",
+    "payloads": [
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x8Ba1f109551bD432803012645Ac136ddd64DBA72",
+        "amount": "250",
+        "reason": "Repay 250 USDC to restore health factor above the 1.10 floor"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x8Ba1f109551bD432803012645Ac136ddd64DBA72",
+        "amount": "250",
+        "reason": "Repay 250 USDC to restore health factor above the 1.10 floor"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x8Ba1f109551bD432803012645Ac136ddd64DBA72",
+        "amount": "250",
+        "reason": "Repay 250 USDC to restore health factor above the 1.10 floor"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x8Ba1f109551bD432803012645Ac136ddd64DBA72",
+        "amount": "250",
+        "reason": "Repay 250 USDC to restore health factor above 1.10"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x8Ba1f109551bD432803012645Ac136ddd64DBA72",
+        "amount": "250",
+        "reason": "Repay 250 USDC to restore health factor above the 1.10 floor"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x8Ba1f109551bD432803012645Ac136ddd64DBA72",
+        "amount": "250",
+        "reason": "Repay 250 USDC to restore health factor above the 1.10 floor"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x8Ba1f109551bD432803012645Ac136ddd64DBA72",
+        "amount": "250",
+        "reason": "Repay 250 USDC to restore health factor above the 1.10 floor"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x8Ba1f109551bD432803012645Ac136ddd64DBA72",
+        "amount": "250",
+        "reason": "Repay 250 USDC to restore health factor above the 1.10 floor"
+      }
+    ],
+    "errors": []
+  },
+  {
+    "scenario": "payroll_chunk",
+    "arm": "cold_restart",
+    "payloads": [
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
+        "amount": "90",
+        "reason": "Payroll payment for contributor on the 1st of the month"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
+        "amount": "90",
+        "reason": "Payroll payment for contributor on the 1st of the month"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
+        "amount": "90",
+        "reason": "Payroll payment for contributor on the 1st of the month"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
+        "amount": "90",
+        "reason": "Payroll payment of 90 USDC to contributor on the 1st of the month."
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
+        "amount": "90",
+        "reason": "Payroll payment of 90 USDC to contributor on the 1st of the month."
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
+        "amount": "90",
+        "reason": "Payroll payment for contributor on the 1st of the month"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
+        "amount": "90",
+        "reason": "Payroll payment for contributor on the 1st of the month"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
+        "amount": "90",
+        "reason": "Payroll payment of 90 USDC to contributor on the 1st of the month."
+      }
+    ],
+    "errors": []
+  },
+  {
+    "scenario": "payroll_chunk",
+    "arm": "log_replay",
+    "payloads": [
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
+        "amount": "90",
+        "reason": "Monthly payroll payment of 90 USDC to contributor"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
+        "amount": "90",
+        "reason": "Monthly payroll payment of 90 USDC to contributor"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
+        "amount": "90",
+        "reason": "Monthly payroll payment of 90 USDC to contributor"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
+        "amount": "90",
+        "reason": "Monthly payroll payment to contributor"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
+        "amount": "90",
+        "reason": "Monthly payroll payment to contributor"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
+        "amount": "90",
+        "reason": "Monthly payroll payment to contributor"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
+        "amount": "90",
+        "reason": "Monthly payroll payment of 90 USDC to contributor"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
+        "amount": "90",
+        "reason": "Monthly payroll payment to contributor"
+      }
+    ],
+    "errors": []
+  },
+  {
+    "scenario": "fee_sweep",
+    "arm": "cold_restart",
+    "payloads": [
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "amount": "42.5",
+        "reason": "Sweeping accrued protocol fees exceeding the 40 USDC threshold."
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "amount": "42.5",
+        "reason": "Sweeping accrued protocol fees exceeding the 40 USDC threshold."
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "amount": "42.5",
+        "reason": "Sweeping accrued protocol fees exceeding the 40 USDC threshold."
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "amount": "42.5",
+        "reason": "Sweeping accrued protocol fees exceeding the 40 USDC threshold."
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "amount": "42.5",
+        "reason": "Sweeping accrued protocol fees exceeding the 40 USDC threshold to the treasury."
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "amount": "42.5",
+        "reason": "Sweeping accrued protocol fees exceeding the 40 USDC threshold."
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "amount": "42.5",
+        "reason": "Sweeping accrued protocol fees exceeding the 40 USDC threshold."
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "amount": "42.5",
+        "reason": "Sweeping accrued protocol fees exceeding the 40 USDC threshold."
+      }
+    ],
+    "errors": []
+  },
+  {
+    "scenario": "fee_sweep",
+    "arm": "log_replay",
+    "payloads": [
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "amount": "42.5",
+        "reason": "Threshold of 40 USDC crossed, sending accrued 42.5 USDC to treasury"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "amount": "42.5",
+        "reason": "Transfer accrued USDC to treasury after crossing the 40 USDC threshold"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "amount": "42.5",
+        "reason": "Transfer accrued USDC to treasury because the 40 USDC threshold was crossed"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "amount": "42.5",
+        "reason": "Threshold of 40 USDC crossed, sending accrued 42.5 USDC to treasury"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "amount": "42.5",
+        "reason": "Transfer accrued USDC to treasury after exceeding the 40 USDC threshold"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "amount": "42.5",
+        "reason": "Transfer accrued USDC to treasury after crossing threshold"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "amount": "42.5",
+        "reason": "Transfer accrued fees exceeding threshold to treasury"
+      },
+      {
+        "action": "transfer",
+        "chain": "base",
+        "token": "USDC",
+        "to": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "amount": "42.5",
+        "reason": "Threshold crossed; sending accrued USDC to treasury"
+      }
+    ],
+    "errors": []
+  }
+]
