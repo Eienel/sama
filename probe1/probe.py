@@ -135,13 +135,38 @@ SCENARIOS = [
 
 
 def extract_json(raw: str) -> dict:
-    """Models wrap JSON in fences or preamble regardless of instructions."""
-    raw = raw.strip()
+    """Extract the first complete JSON object.
+
+    Models wrap JSON in fences, preamble, reasoning markup, or trailing commentary
+    regardless of instructions. Spanning first-'{' to last-'}' breaks as soon as a
+    model emits an object followed by prose containing another brace, so scan with a
+    depth counter instead, ignoring braces inside strings.
+    """
+    raw = re.sub(r"<think>.*?</think>", "", raw.strip(), flags=re.S | re.I)
     raw = re.sub(r"^```(?:json)?|```$", "", raw, flags=re.MULTILINE).strip()
-    start, end = raw.find("{"), raw.rfind("}")
-    if start == -1 or end == -1:
-        raise ValueError(f"no JSON object found in: {raw[:200]!r}")
-    return json.loads(raw[start : end + 1])
+
+    depth = start = 0
+    in_str = esc = False
+    for i, ch in enumerate(raw):
+        if in_str:
+            if esc:
+                esc = False
+            elif ch == "\\":
+                esc = True
+            elif ch == '"':
+                in_str = False
+            continue
+        if ch == '"':
+            in_str = True
+        elif ch == "{":
+            if depth == 0:
+                start = i
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return json.loads(raw[start : i + 1])
+    raise ValueError(f"no complete JSON object in: {raw[:160]!r}")
 
 
 def canonical(payload: dict) -> str:
