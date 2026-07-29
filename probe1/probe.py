@@ -342,7 +342,18 @@ def main() -> int:
     ap.add_argument("--rpm", type=int, default=5,
                     help="requests/min cap (Gemini free tier: 5)")
     ap.add_argument("--dump", metavar="PATH", help="write raw payloads as JSON")
+    ap.add_argument("--report-from", metavar="PATH",
+                    help="re-report from a dump instead of calling the API")
     args = ap.parse_args()
+
+    if args.report_from:
+        with open(args.report_from) as f:
+            saved = json.load(f)
+        return report([
+            ArmResult(scenario=d["scenario"], arm=d["arm"],
+                      payloads=d["payloads"], errors=d.get("errors", []))
+            for d in saved
+        ])
 
     model = args.model or {"gemini": "gemini-2.5-flash",
                            "anthropic": "claude-sonnet-5"}[args.provider]
@@ -350,21 +361,31 @@ def main() -> int:
     print(f"provider={args.provider} model={model} "
           f"trials={args.trials} temperature={args.temperature}")
 
-    results = []
-    for sc in SCENARIOS:
-        for arm in ("cold_restart", "log_replay"):
-            print(f"  running {sc.name}/{arm} ...", flush=True)
-            results.append(run_arm(generate, sc, arm, args.trials))
-
-    if args.dump:
+    def save(rs):
+        if not args.dump:
+            return
         with open(args.dump, "w") as f:
             json.dump(
                 [{"scenario": r.scenario, "arm": r.arm, "payloads": r.payloads,
-                  "errors": r.errors} for r in results],
+                  "errors": r.errors} for r in rs],
                 f, indent=2,
             )
-        print(f"\nraw payloads -> {args.dump}")
 
+    results = []
+    try:
+        for sc in SCENARIOS:
+            for arm in ("cold_restart", "log_replay"):
+                print(f"  running {sc.name}/{arm} ...", flush=True)
+                results.append(run_arm(generate, sc, arm, args.trials))
+                # Persist after every arm. Free-tier quota can strand a run
+                # mid-flight, and completed arms are still valid evidence.
+                save(results)
+    except KeyboardInterrupt:
+        print("\ninterrupted -- reporting on completed arms only", flush=True)
+
+    save(results)
+    if args.dump:
+        print(f"\nraw payloads -> {args.dump}")
     return report(results)
 
 
