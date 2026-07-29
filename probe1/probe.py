@@ -242,6 +242,34 @@ def make_generator(provider: str, model: str, temp: float):
 
         return gen
 
+    # One OpenAI-compatible path covers most free tiers. Each entry is
+    # (base_url, env var, default model, free-tier note).
+    OPENAI_COMPAT = {
+        "groq": ("https://api.groq.com/openai/v1", "GROQ_API_KEY",
+                 "llama-3.3-70b-versatile", "30 req/min, 1000/day, no card"),
+        "cerebras": ("https://api.cerebras.ai/v1", "CEREBRAS_API_KEY",
+                     "llama-3.3-70b", "1M tokens/day, no card"),
+        "openrouter": ("https://openrouter.ai/api/v1", "OPENROUTER_API_KEY",
+                       "meta-llama/llama-3.3-70b-instruct:free", "~50 req/day free tier"),
+        "github": ("https://models.inference.ai.azure.com", "GITHUB_TOKEN",
+                   "gpt-4o-mini", "free with a GitHub account"),
+    }
+    if provider in OPENAI_COMPAT:
+        base, env, _, note = OPENAI_COMPAT[provider]
+        key = os.environ.get(env)
+        if not key:
+            raise SystemExit(f"error: set {env}  ({provider} free tier: {note})")
+        try:
+            from openai import OpenAI
+        except ImportError:
+            raise SystemExit("error: pip install openai")
+        client = OpenAI(api_key=key, base_url=base)
+        return lambda prompt: client.chat.completions.create(
+            model=model, temperature=temp, max_tokens=2048,
+            messages=[{"role": "system", "content": SYSTEM},
+                      {"role": "user", "content": prompt}],
+        ).choices[0].message.content
+
     if provider == "anthropic":
         if not os.environ.get("ANTHROPIC_API_KEY"):
             raise SystemExit("error: set ANTHROPIC_API_KEY")
@@ -380,13 +408,15 @@ def report(results: list[ArmResult]) -> int:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--provider", default="gemini", choices=("gemini", "anthropic"))
+    ap.add_argument("--provider", default="groq",
+                    choices=("groq", "cerebras", "openrouter", "github",
+                             "gemini", "anthropic"))
     ap.add_argument("--model", default=None, help="default: gemini-2.5-flash / claude-sonnet-5")
     ap.add_argument("--trials", type=int, default=8, help="trials per scenario per arm")
     ap.add_argument("--temperature", type=float, default=1.0,
                     help="1.0 = realistic agent default; 0.0 = best case for hashing")
-    ap.add_argument("--rpm", type=int, default=5,
-                    help="requests/min cap (Gemini free tier: 5)")
+    ap.add_argument("--rpm", type=int, default=20,
+                    help="requests/min cap (Gemini free tier: 5, Groq: 30)")
     ap.add_argument("--dump", metavar="PATH", help="write raw payloads as JSON")
     ap.add_argument("--report-from", metavar="PATH",
                     help="re-report from a dump instead of calling the API")
@@ -401,8 +431,14 @@ def main() -> int:
             for d in saved
         ])
 
-    model = args.model or {"gemini": "gemini-2.5-flash",
-                           "anthropic": "claude-sonnet-5"}[args.provider]
+    model = args.model or {
+        "groq": "llama-3.3-70b-versatile",
+        "cerebras": "llama-3.3-70b",
+        "openrouter": "meta-llama/llama-3.3-70b-instruct:free",
+        "github": "gpt-4o-mini",
+        "gemini": "gemini-flash-latest",
+        "anthropic": "claude-sonnet-5",
+    }[args.provider]
     generate = throttled(make_generator(args.provider, model, args.temperature), args.rpm)
     print(f"provider={args.provider} model={model} "
           f"trials={args.trials} temperature={args.temperature}")
