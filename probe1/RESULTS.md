@@ -1,0 +1,123 @@
+# Probe 1 — Results
+
+**Verdict: MECHANISM CONFIRMED.** Content-addressed idempotency does not survive an
+LLM agent's context loss. Idea #2 lives.
+
+Run on `llama-3.3-70b-versatile` via Groq, 8 trials per scenario per arm, 3 scenarios,
+2 arms. Raw payloads in `results/`; re-analyse with
+`python3 probe1/probe.py --report-from probe1/results/groq_t0.json`.
+
+## Temperature 1.0 — realistic agent default
+
+```
+scenario         arm               exact   canonical   semantic
+aave_repay       cold_restart        38%         38%       100%
+aave_repay       log_replay          25%         25%        62%
+payroll_chunk    cold_restart        50%         50%       100%
+payroll_chunk    log_replay          38%         38%       100%
+fee_sweep        cold_restart        50%         50%       100%
+fee_sweep        log_replay          25%         25%       100%
+```
+
+Every arm shows a gap. At worst (`fee_sweep/log_replay`) a content-hash idempotency
+key would have caught **25%** of retries and let **75%** through as duplicate onchain
+transfers — while the transaction being sent was identical every time.
+
+## Temperature 0.0 — the decisive run
+
+The obvious objection to the above is "that's just sampling noise, turn the temperature
+down." So we did.
+
+```
+scenario         arm               exact   canonical   semantic
+aave_repay       cold_restart        62%         62%       100%
+aave_repay       log_replay          75%         75%        88%
+payroll_chunk    cold_restart       100%        100%       100%
+payroll_chunk    log_replay          88%         88%       100%
+fee_sweep        cold_restart       100%        100%       100%
+fee_sweep        log_replay          50%         50%       100%
+```
+
+Distinct canonical keys produced across 8 identical retries:
+
+| scenario | cold_restart | log_replay |
+|---|---|---|
+| aave_repay | 2 | 3 |
+| payroll_chunk | **1** | 2 |
+| fee_sweep | **1** | **4** |
+
+**This is the finding.** At temperature 0 the `cold_restart` arm mostly collapses to a
+single key — deterministic prompt, deterministic output, hashing works. The
+`log_replay` arm **does not**: 2, 3, and 4 distinct keys for the same transaction.
+
+The divergence is not sampling noise. It is caused by **reconstructing intent from a
+log after context loss** — precisely the Lobstar Wilde scenario. Turning temperature
+down does not fix it, because the input itself changed.
+
+## What actually differs
+
+`fee_sweep/log_replay` at temperature 0 — the `reason` field across 8 trials:
+
+```
+Accrued fees exceeded the threshold of 40 USDC
+Accrued fees exceed threshold of 40 USDC
+Accrued fees exceeded threshold of 40 USDC
+Accrued fees exceeded the threshold of 40 USDC
+Accrued fees exceeded the threshold of 40 USDC
+Accrued fees exceeded the threshold of 40 USDC
+Accrued fees exceed threshold of 40 USDC
+Accrued fees exceed threshold
+```
+
+Tense, articles, truncation. Nothing else. `action`, `chain`, `token`, `to` and
+`amount` were **identical in all 8**. Four different hashes, one transaction.
+
+That is the entire thesis in one field: **prose the model writes about the action gets
+folded into the key that is supposed to identify the action.**
+
+Note the canonicalizer already sorts keys, folds case, normalizes whitespace and
+number formats. This is not a strawman implementation failing — it is a competent one
+failing, because no amount of canonicalization fixes a field whose content legitimately
+varies.
+
+## The second finding (unplanned, arguably worse)
+
+`aave_repay/log_replay` is the only arm where **semantic** dropped below 100% (88% at
+t=0, 62% at t=1). Inspecting the payloads:
+
+```
+[0] contract_call 250 USDC -> 0x8Ba1...
+...
+[5] transfer      250 USDC -> 0x8Ba1...      <-- different action
+```
+
+After context loss the agent did not merely re-word its intent — in one trial it chose
+a **different transaction type** for the same situation. A semantic idempotency key
+would not save you here, because the semantics genuinely changed.
+
+This is not an idempotency problem. It is the agent disagreeing with itself about what
+it was doing, and it needs a different mechanism: **premise invariants** (idea #1) —
+re-checking at submission that the justification still holds.
+
+**The two ideas are separately confirmed by this one run, which is direct evidence they
+should not be merged.** #2 = the agent forgot the exact words. #1 = the agent forgot
+the plan.
+
+## Implications
+
+1. **Do not hash free-text fields into an idempotency key.** Hash the semantic surface
+   only: `action`, `chain`, `token`, `to`, `amount`.
+2. **A semantic key is necessary but not sufficient.** It closes the prose-drift gap
+   and does nothing for the changed-action case.
+3. **Lower temperature is not a fix.** The `log_replay` divergence survives temperature
+   0 because the input changed, not the sampling.
+
+## Caveats
+
+- One model family (Llama 3.3 70B). The cross-vendor run (`--provider gemini` /
+  `anthropic`) is what would establish this as a property of LLM regeneration rather
+  than one model's behaviour. Blocked today only by Gemini free-tier quota.
+- 8 trials per arm — enough to show the effect, not to put confidence intervals on it.
+- `log_summary` inputs are hand-written approximations of what a real agent's recovered
+  log looks like. A recovered log from an actual framework crash would be stronger
+  evidence.
