@@ -130,17 +130,62 @@ fee_sweep        log_replay          25%         25%       100%
 Same signature, independently: `fee_sweep/log_replay` at **25% canonical vs 100%
 semantic** — a 75-point gap at temperature 0. `payroll_chunk/log_replay` at 50 vs 100.
 
-Two unrelated model families (Meta Llama 3.3, OpenAI gpt-oss) reproduce the effect at
-temperature 0. That makes it a property of **LLM regeneration**, not of one vendor's
-sampler — which is the version of this result worth putting in front of judges.
-
 Note `aave_repay/cold_restart` also shows semantic at 88% here: gpt-oss, like Llama,
 sometimes picks a different action type. The second finding replicates too.
 
-A third family (`qwen/qwen3.6-27b`) returned unparseable output — it emits reasoning
-markup the extractor does not handle. The harness correctly reported **INCONCLUSIVE**
-rather than scoring a contaminated sample. Worth fixing if a third data point is
-wanted; not required for the result.
+### The third family falsifies the strong claim
+
+`qwen/qwen3.6-27b`, same conditions, after fixing a bug in our JSON extractor that had
+previously written its output off as unparseable:
+
+```
+scenario         arm               exact   canonical   semantic
+aave_repay       cold_restart       100%        100%       100%
+aave_repay       log_replay         100%        100%       100%
+payroll_chunk    cold_restart       100%        100%       100%
+payroll_chunk    log_replay         100%        100%       100%
+fee_sweep        cold_restart       100%        100%       100%
+fee_sweep        log_replay         100%        100%       100%
+```
+
+**One distinct canonical key per arm, across every arm.** Perfectly stable, including
+`log_replay`. Content-hash idempotency would work flawlessly against this model.
+
+The `fee_sweep/log_replay` reason field across 8 trials, by model:
+
+| model | distinct reasons / 8 | mean length |
+|---|---|---|
+| qwen3.6-27b | **1** | 93 chars |
+| llama-3.3-70b | 4 | 41 chars |
+| gpt-oss-120b | **7** | 64 chars |
+
+Not a length effect — qwen writes the *longest* reason and still never varies it.
+It is a per-model property of how deterministically the model regenerates prose.
+
+### What this actually licenses us to claim
+
+An earlier draft of this document said the effect is "a property of LLM regeneration,
+not of one vendor's sampler." **Qwen falsifies that, and the claim is withdrawn.**
+
+The defensible claim is narrower and still useful:
+
+> Content-addressed idempotency is **model-dependent and silently unsafe**. Two of
+> three model families break it at temperature 0 — including gpt-oss-120b, a large
+> capable model, which was the *worst* at 7 distinct keys out of 8 retries. One family
+> does not break it at all.
+
+Why that still matters:
+
+1. **You do not control the model.** An agent system correct under qwen silently
+   double-executes when someone swaps in gpt-oss. Nothing warns you.
+2. **The failure is invisible.** There is no error — dedupe simply does not fire.
+3. **Model choice is not a safety mechanism.** "Use qwen" is not an argument anyone
+   can make to a treasury.
+
+What it costs us: the primitive is no longer justified by "LLMs are nondeterministic,
+therefore hashing is broken." It is justified by "hashing's correctness depends on an
+uncontrolled, unstated property of whichever model is deployed." That is a weaker but
+honest pitch, and one a judge cannot puncture with a single counterexample.
 
 ## Caveats
 
