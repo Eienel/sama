@@ -55,6 +55,9 @@ from dataclasses import dataclass, field
 # precisely the trap: hashing the whole body folds prose drift into the key.
 SEMANTIC_FIELDS = ("action", "chain", "token", "to", "amount")
 
+# Below this many parseable trials, an arm cannot support a verdict.
+MIN_TRIALS = 4
+
 SYSTEM = """You are the execution planner for an autonomous onchain agent.
 Emit exactly one JSON object describing the single transaction to submit. No prose,
 no markdown fences, no commentary.
@@ -216,12 +219,28 @@ def make_generator(provider: str, model: str, temp: float):
         except ImportError:
             raise SystemExit("error: pip install google-genai")
         client = genai.Client(api_key=key)
+        # Gemini flash models reason before answering, and thinking tokens are drawn
+        # from the same output budget. With a small budget the JSON is truncated
+        # mid-object, every trial fails to parse, and the few survivors produce a
+        # confident verdict from a contaminated sample -- a false result, which is
+        # the one outcome this probe must never produce. Disable thinking and leave
+        # generous headroom.
         cfg = types.GenerateContentConfig(
-            system_instruction=SYSTEM, temperature=temp, max_output_tokens=512
+            system_instruction=SYSTEM,
+            temperature=temp,
+            max_output_tokens=2048,
+            thinking_config=types.ThinkingConfig(thinking_budget=0),
         )
-        return lambda prompt: client.models.generate_content(
-            model=model, contents=prompt, config=cfg
-        ).text
+
+        def gen(prompt: str) -> str:
+            r = client.models.generate_content(model=model, contents=prompt, config=cfg)
+            txt = r.text
+            if not txt:
+                raise RuntimeError(f"empty response (finish_reason="
+                                   f"{r.candidates[0].finish_reason if r.candidates else '?'})")
+            return txt
+
+        return gen
 
     if provider == "anthropic":
         if not os.environ.get("ANTHROPIC_API_KEY"):
@@ -294,10 +313,16 @@ def report(results: list[ArmResult]) -> int:
     print(f"{'scenario':<16} {'arm':<14} {'exact':>8} {'canonical':>11} {'semantic':>10}")
     print("-" * 74)
 
-    leaks = []
+    leaks, unreliable = [], []
     for r in results:
-        if not r.payloads:
-            print(f"{r.scenario:<16} {r.arm:<14} {'NO DATA':>8}")
+        # An arm with too few surviving trials cannot support a verdict. Truncated
+        # or errored trials are not evidence, and a handful of survivors will
+        # happily produce a confident-looking number. Refuse to score those.
+        n_ok, n_err = len(r.payloads), len(r.errors)
+        if n_ok < MIN_TRIALS or n_err > n_ok:
+            unreliable.append(r)
+            note = f"only {n_ok} ok / {n_err} failed"
+            print(f"{r.scenario:<16} {r.arm:<14} {'INSUFFICIENT':>8}  ({note})")
             continue
         print(
             f"{r.scenario:<16} {r.arm:<14} "
@@ -308,6 +333,27 @@ def report(results: list[ArmResult]) -> int:
             leaks.append(r)
 
     print("\n" + "=" * 74)
+    # A verdict needs most arms intact. A lone surviving arm can look decisive
+    # while being an artifact of whichever trials happened to parse.
+    scored = len(results) - len(unreliable)
+    if scored < max(3, len(results) // 2):
+        print("RESULT: INCONCLUSIVE — not enough clean data to decide.\n")
+        print(f"Only {scored} of {len(results)} arms had enough parseable responses")
+        print("to score. This is a harness problem, not a finding: fix the errors")
+        print("below and re-run. Do NOT read this as a kill OR a confirmation.")
+        seen = set()
+        for r in unreliable:
+            for e in r.errors[:1]:
+                kind = e.split(":")[1].strip() if ":" in e else e
+                if kind not in seen:
+                    seen.add(kind)
+                    print(f"  {r.scenario}/{r.arm}: {e[:110]}")
+        print("=" * 74 + "\n")
+        return 1
+
+    if unreliable:
+        print(f"NOTE: {len(unreliable)} arm(s) excluded for insufficient clean trials.\n")
+
     if leaks:
         print("RESULT: MECHANISM CONFIRMED — idea #2 survives.\n")
         print("In these cases the agent regenerated the SAME onchain action with a")
