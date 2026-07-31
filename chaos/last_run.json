@@ -1,76 +1,13 @@
 [
   {
-    "name": "prose_drift",
-    "claim": "Hashing the whole payload gives a stable idempotency key across a retry",
+    "name": "conditional_staleness",
+    "claim": "A met condition guarantees the action runs while it still holds",
     "verdict": "FINDING",
-    "detail": "Same transaction, two executions. The payloads differ only in a free-text `reason` field the model rewrote -- observed verbatim from llama-3.3-70b and gpt-oss-120b at temperature 0.",
+    "detail": "Condition 'block <= 11392654' evaluated true at block 11392654; the action was included at block 11392655, 1 block(s) later, where it is false. KeeperHub's own read-condition-act primitive carries the gap it exists to remove: the check and the action are not atomic, so the gate says 'only act while true' and delivers 'act if it was true a moment ago'. An agent that hand-rolls this at least knows it is racing.",
     "evidence": [
-      "0x2bmaswm8hvyf64myn9r",
-      "i41oy3em8vm436g7kfdw4"
-    ],
-    "severity": "HIGH"
-  },
-  {
-    "name": "semantic_key_fix",
-    "claim": "Hashing only the semantic surface survives prose drift",
-    "verdict": "PASS",
-    "detail": "Both retries collapsed to one execution.",
-    "evidence": [
-      "3asp0ypmgerj11vn39o7f"
-    ],
-    "severity": "-"
-  },
-  {
-    "name": "omitted_key",
-    "claim": "Retrying an identical transfer without a key is safe by default",
-    "verdict": "FINDING",
-    "detail": "Two identical transfers, two executions. Duplicate protection is opt-in: an agent that never sets idempotency_key has none, and nothing warns it.",
-    "evidence": [
-      "wjnqwo2jnc1yk73qomfpt",
-      "nb4c0q54vi5l69gwlx8dt"
-    ],
-    "severity": "MEDIUM"
-  },
-  {
-    "name": "concurrent_same_key",
-    "claim": "Simultaneous retries with one key produce exactly one execution",
-    "verdict": "PASS",
-    "detail": "4 concurrent calls -> 1 execution, 3 rejected 409 'already being processed'. The dedupe is atomic under concurrency: the race is serialised server-side rather than racing through.",
-    "evidence": [
-      "h1ddg4l185b2oitcxa3a8"
-    ],
-    "severity": "-"
-  },
-  {
-    "name": "amount_formatting",
-    "claim": "Equivalent amount strings yield the same semantic key",
-    "verdict": "FINDING",
-    "detail": "'0.001' and '0.0010' are the same transfer but hash differently, so even the semantic key double-spends unless amounts are normalized before hashing. A model re-emitting a number in another format is enough.",
-    "evidence": [
-      "3asp0ypmgerj11vn39o7f",
-      "59n6kaz5mzub429mzrqwz"
-    ],
-    "severity": "MEDIUM"
-  },
-  {
-    "name": "cross_chain_key_scope",
-    "claim": "Reusing a key with a different payload is caught, not silently applied",
-    "verdict": "PASS",
-    "detail": "409 'Idempotency-Key was reused with a different request payload'. The key is bound to the payload, so a cross-chain reuse is rejected outright rather than silently suppressing a legitimate transfer. This is the Stripe semantic done correctly.",
-    "evidence": [
-      "xalm8g6z6ndq8bzvev6qm"
-    ],
-    "severity": "-"
-  },
-  {
-    "name": "premise_staleness",
-    "claim": "The premise an agent decided on still holds when its tx is included",
-    "verdict": "FINDING",
-    "detail": "Decided at block 11392643 on the premise 'block <= 11392643'. Included at block 11392644, 1 block(s) later (12.5s). The premise was FALSE at inclusion and the transaction executed anyway. Simulation verifies feasibility, never justification, so this is invisible: the transaction succeeds and reports success.",
-    "evidence": [
-      "0x5c9c9a99f5045ade490fdb367a635f7ff3d9254d7b20cbe1b6ee20dc5dc53817",
-      "decided@11392643",
-      "included@11392644"
+      "0x058bddf6da9ef46956e3cc408c048bb228fbe3d9e1fae3817a8cee75a43f7f49",
+      "checked@11392654",
+      "executed@11392655"
     ],
     "severity": "HIGH"
   }

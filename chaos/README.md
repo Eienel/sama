@@ -21,9 +21,10 @@ concurrent_same_key     PASS      -       simultaneous retries -> one execution
 amount_formatting       FINDING   MEDIUM  equivalent amounts yield the same key
 cross_chain_key_scope   PASS      -       key reuse w/ different payload is caught
 premise_staleness       FINDING   HIGH    premise still holds when tx is included
+conditional_staleness   FINDING   HIGH    a met condition gates the action atomically
 ```
 
-**4 findings / 7 scenarios** — two HIGH, and they are *different mechanisms*:
+**5 findings / 8 scenarios** — two HIGH, and they are *different mechanisms*:
 `prose_drift` is the agent forgetting its exact words; `premise_staleness` is the world
 moving underneath it. Neither fix addresses the other.
 
@@ -90,6 +91,30 @@ premise at submission and abort rather than execute.
 
 Block height is a deliberately unarguable premise (it always advances). Real premises
 — a health factor, a price, an allowance — expire the same way and less predictably.
+
+### HIGH — `conditional_staleness`
+
+The obvious objection to the finding above is "don't hand-roll read-then-act, use the
+primitive." So we aimed the same test at `execute_check_and_execute`, which reads a
+value, evaluates a condition, and performs an action if it holds.
+
+```
+condition "block <= 11392654"  evaluated TRUE at block 11392654
+action                          included at block 11392655 — condition FALSE
+tx 0x058bddf6da9ef46956e3cc408c048bb228fbe3d9e1fae3817a8cee75a43f7f49
+```
+
+**The primitive carries the gap it exists to remove.** The check and the action are
+not atomic, so the gate advertises "only act while this is true" and delivers "act if
+it was true a moment ago". Reproduced across independent runs (11392650→11392651,
+11392654→11392655).
+
+This is worse than the hand-rolled case rather than equivalent: an agent that writes
+its own read-then-act at least knows it is racing. An agent handed a conditional
+primitive reasonably assumes the condition is enforced at execution.
+
+The fix is not to remove the tool — it is to re-check the condition at submission and
+abort if it no longer holds, which is exactly what "premise invariants" means.
 
 ## Running
 

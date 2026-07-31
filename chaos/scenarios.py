@@ -305,6 +305,65 @@ def premise_staleness(w: str) -> Result:
     )
 
 
+WETH_SEPOLIA = "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14"
+
+
+def conditional_staleness(w: str) -> Result:
+    """The same staleness question, aimed at KeeperHub's own primitive.
+
+    `execute_check_and_execute` reads a contract value, evaluates a condition, and
+    performs an action if it holds -- the read-then-act pattern, offered so agents do
+    not hand-roll it. If the gate is evaluated at one block and the action lands at a
+    later one, the guarantee it appears to offer ("only act while this is true") does
+    not hold, and it fails in the same way as hand-rolled code while looking safer.
+
+    The premise is chain height, which only ever advances, so a stale read is
+    unambiguous rather than a matter of interpretation.
+    """
+    n = _block_now()
+    out = json.loads(call_tool("execute_check_and_execute", {
+        "chain_id": SEPOLIA,
+        "contract_address": MULTICALL3,
+        "function_name": "getBlockNumber",
+        "condition": {"operator": "lte", "value": str(n)},
+        # A zero-value approve: state-changing, always succeeds, costs nothing.
+        "action": {"contract_address": WETH_SEPOLIA, "function_name": "approve",
+                   "function_args": json.dumps([w, "0"])},
+        "idempotency_key": _key({"s": "cae", "n": time.time()}),
+    }))
+
+    if not out.get("executed"):
+        return Result("conditional_staleness",
+                      "A met condition guarantees the action runs while it still holds",
+                      "PASS", "Condition not met; nothing executed.", [])
+
+    observed = int(out.get("conditionResult", {}).get("observedValue", n))
+    tx = _tx_of(out["executionId"])
+    if not tx:
+        return Result("conditional_staleness", "", "ERROR", "no transaction hash")
+    rcpt = _rpc("eth_getTransactionReceipt", [tx])
+    if not rcpt:
+        return Result("conditional_staleness", "", "ERROR", "no receipt")
+    incl = int(rcpt["blockNumber"], 16)
+
+    stale = incl > observed
+    return Result(
+        "conditional_staleness",
+        "A met condition guarantees the action runs while it still holds",
+        "FINDING" if stale else "PASS",
+        (f"Condition 'block <= {observed}' evaluated true at block {observed}; the "
+         f"action was included at block {incl}, {incl - observed} block(s) later, "
+         "where it is false. KeeperHub's own read-condition-act primitive carries the "
+         "gap it exists to remove: the check and the action are not atomic, so the "
+         "gate says 'only act while true' and delivers 'act if it was true a moment "
+         "ago'. An agent that hand-rolls this at least knows it is racing."
+         if stale else
+         f"Condition and action both at block {incl}; the gate held."),
+        [tx, f"checked@{observed}", f"executed@{incl}"],
+        "HIGH" if stale else "-",
+    )
+
+
 SCENARIOS = [
     prose_drift,
     semantic_key_fix,
@@ -313,4 +372,5 @@ SCENARIOS = [
     amount_formatting,
     cross_chain_key_scope,
     premise_staleness,
+    conditional_staleness,
 ]
