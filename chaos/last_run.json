@@ -1,22 +1,13 @@
 [
   {
-    "name": "revert_reporting",
-    "claim": "A call that will revert is reported as failed, not completed",
-    "verdict": "PASS",
-    "detail": "Reported status='failed', error='Contract call failed: missing revert data (action=\"call\", data=null, reason=null'. The failure surfaces.",
+    "name": "silent_noop_node",
+    "claim": "A workflow whose action node never runs does not report success",
+    "verdict": "FINDING",
+    "detail": "status='success' but executionTrace=['trigger-1'] -- the action node was skipped and the run still reported success, with error=None. The node was missing `actionType`; supplying it makes creation reject the workflow for a missing `abi`, so the *less* complete definition passes validation and silently does nothing, while the more complete one is caught. An agent sees a green run and an audit trail of success for an automation that never ran.",
     "evidence": [
-      "ddk6gt79797njyumcdkum"
+      "trace=['trigger-1']",
+      "status=success"
     ],
-    "severity": "-"
-  },
-  {
-    "name": "overdraft_transfer",
-    "claim": "An unaffordable transfer is rejected cleanly, not left pending",
-    "verdict": "PASS",
-    "detail": "status='failed', error='Insufficient ETH balance. Have: 0.05, Need: 1000000.0'. Failed cleanly; no nonce consumed.",
-    "evidence": [
-      "yhhu1i2g0nh1uiyc6ioh7"
-    ],
-    "severity": "-"
+    "severity": "HIGH"
   }
 ]

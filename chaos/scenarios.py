@@ -442,6 +442,70 @@ def overdraft_transfer(w: str) -> Result:
     )
 
 
+def silent_noop_node(w: str) -> Result:
+    """A workflow whose action node never runs must not report success.
+
+    For a reliability layer the worst outcome is not an error -- it is "your
+    automation ran fine" while nothing happened. An agent polling status sees
+    success, the audit trail records success, and no alert fires.
+    """
+    mc3, wid = MULTICALL3, None
+    # A node with no actionType: accepted at creation, no validation complaint.
+    nodes = [
+        {"id": "trigger-1", "type": "trigger", "position": {"x": 0, "y": 0},
+         "data": {"type": "trigger", "label": "Manual",
+                  "config": {"triggerType": "Manual"}, "status": "idle"}},
+        {"id": "read-1", "type": "action", "position": {"x": 300, "y": 0},
+         "data": {"type": "action", "label": "Read Block", "status": "idle",
+                  "config": {"network": SEPOLIA, "contractAddress": mc3,
+                             "abiFunction": "getBlockNumber"}}},
+    ]
+    try:
+        wf = json.loads(call_tool("create_workflow", {
+            "name": f"chaos-silent-noop-{int(time.time())}",
+            "description": "action node with no actionType",
+            "nodes": nodes,
+            "edges": [{"id": "e1", "source": "trigger-1", "target": "read-1"}],
+            "enabled": True,
+            "idempotency_key": _key({"s": "noop", "n": time.time()})}))
+        wid = wf["id"]
+        ex = json.loads(call_tool("execute_workflow", {"workflowId": wid}))
+        time.sleep(6)
+        e = json.loads(call_tool("get_execution",
+                                 {"executionId": ex["executionId"]}))["logs"]["execution"]
+    except RuntimeError as err:
+        return Result(
+            "silent_noop_node",
+            "A workflow whose action node never runs does not report success",
+            "PASS",
+            f"Rejected at creation: {str(err)[:150]}", [])
+    finally:
+        if wid:
+            try:
+                call_tool("delete_workflow", {"workflowId": wid})
+            except Exception:
+                pass
+
+    trace, status = e.get("executionTrace", []), e.get("status")
+    ran = "read-1" in trace
+    lied = (status == "success") and not ran
+    return Result(
+        "silent_noop_node",
+        "A workflow whose action node never runs does not report success",
+        "FINDING" if lied else "PASS",
+        (f"status={status!r} but executionTrace={trace} -- the action node was "
+         "skipped and the run still reported success, with error=None. The node was "
+         "missing `actionType`; supplying it makes creation reject the workflow for a "
+         "missing `abi`, so the *less* complete definition passes validation and "
+         "silently does nothing, while the more complete one is caught. An agent sees "
+         "a green run and an audit trail of success for an automation that never ran."
+         if lied else
+         f"status={status!r}, trace={trace}. No silent no-op."),
+        [f"trace={trace}", f"status={status}"],
+        "HIGH" if lied else "-",
+    )
+
+
 SCENARIOS = [
     prose_drift,
     semantic_key_fix,
@@ -453,4 +517,5 @@ SCENARIOS = [
     conditional_staleness,
     revert_reporting,
     overdraft_transfer,
+    silent_noop_node,
 ]
