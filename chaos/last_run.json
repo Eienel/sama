@@ -26,8 +26,8 @@
     "verdict": "FINDING",
     "detail": "Two identical transfers, two executions. Duplicate protection is opt-in: an agent that never sets idempotency_key has none, and nothing warns it.",
     "evidence": [
-      "fuzmmeafxpkfrad1qf7il",
-      "f4qu2io16od7q7bmbp9i9"
+      "wjnqwo2jnc1yk73qomfpt",
+      "nb4c0q54vi5l69gwlx8dt"
     ],
     "severity": "MEDIUM"
   },
@@ -37,7 +37,7 @@
     "verdict": "PASS",
     "detail": "4 concurrent calls -> 1 execution, 3 rejected 409 'already being processed'. The dedupe is atomic under concurrency: the race is serialised server-side rather than racing through.",
     "evidence": [
-      "ybck5litawiwbxbe068lf"
+      "h1ddg4l185b2oitcxa3a8"
     ],
     "severity": "-"
   },
@@ -58,18 +58,20 @@
     "verdict": "PASS",
     "detail": "409 'Idempotency-Key was reused with a different request payload'. The key is bound to the payload, so a cross-chain reuse is rejected outright rather than silently suppressing a legitimate transfer. This is the Stripe semantic done correctly.",
     "evidence": [
-      "qjnuwoab3czgiq0tpnx37"
+      "xalm8g6z6ndq8bzvev6qm"
     ],
     "severity": "-"
   },
   {
     "name": "premise_staleness",
-    "claim": "The state an agent decided on is still current when its tx lands",
+    "claim": "The premise an agent decided on still holds when its tx is included",
     "verdict": "FINDING",
-    "detail": "11.6s elapsed between decision and inclusion. Nothing re-checks the premise in that window: the transaction executes even if the condition that justified it stopped holding. Simulation checks feasibility, not justification.",
+    "detail": "Decided at block 11392643 on the premise 'block <= 11392643'. Included at block 11392644, 1 block(s) later (12.5s). The premise was FALSE at inclusion and the transaction executed anyway. Simulation verifies feasibility, never justification, so this is invisible: the transaction succeeds and reports success.",
     "evidence": [
-      "0x5934609f311ae9f5784725d61b727283d6687fd9dca62b1ee74590e5b38f6e4d"
+      "0x5c9c9a99f5045ade490fdb367a635f7ff3d9254d7b20cbe1b6ee20dc5dc53817",
+      "decided@11392643",
+      "included@11392644"
     ],
-    "severity": "MEDIUM"
+    "severity": "HIGH"
   }
 ]

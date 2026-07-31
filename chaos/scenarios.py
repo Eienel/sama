@@ -238,26 +238,70 @@ def cross_chain_key_scope(w: str) -> Result:
     )
 
 
+MULTICALL3 = "0xcA11bde05977b3631167028862bE2a173976CA11"
+SEPOLIA_RPC = "https://ethereum-sepolia-rpc.publicnode.com"
+
+
+def _rpc(method: str, params: list):
+    import urllib.request
+    body = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method,
+                       "params": params}).encode()
+    # Same trap as KeeperHub's edge: public RPCs 403 the default urllib user-agent.
+    req = urllib.request.Request(SEPOLIA_RPC, data=body, headers={
+        "Content-Type": "application/json", "User-Agent": "chaos-harness/1.0"})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        return json.loads(r.read()).get("result")
+
+
+def _block_now() -> int:
+    """Read chain height through KeeperHub itself, so the premise is observed the
+    same way an agent using KeeperHub would observe it."""
+    out = call_tool("execute_contract_call", {
+        "chain_id": SEPOLIA, "contract_address": MULTICALL3,
+        "function_name": "getBlockNumber"})
+    # Named single-output functions come back as {"result": {"blockNumber": "..."}};
+    # unnamed ones as {"result": "..."}. Accept either.
+    r = json.loads(out)["result"]
+    return int(r["blockNumber"] if isinstance(r, dict) else r)
+
+
 def premise_staleness(w: str) -> Result:
-    """Read-then-act. Measure the window between observing state and landing a tx --
-    the gap in which the justification for the transaction can evaporate."""
+    """Read-then-act, with a premise that provably expires.
+
+    The agent observes height N and acts on the premise "block <= N" -- true at the
+    moment of decision. If the transaction is included at a height above N, the
+    justification for it was false by the time it executed. Nothing anywhere in the
+    pipeline notices: simulation checks that the transaction *can* run, never that
+    the reason for running it still holds.
+    """
     t0 = time.time()
-    bal_before = call_tool("execute_contract_call", {
-        "chain_id": SEPOLIA, "contract_address": w, "function_name": "x"}) \
-        if False else None  # placeholder; native balance read below
+    n_decide = _block_now()
+
     r = _transfer(w, "0.001", SEPOLIA, _key({"s": "stale", "n": time.time()}))
     tx = _tx_of(r["executionId"])
+    if not tx:
+        return Result("premise_staleness", "", "ERROR", "no transaction hash returned")
+
+    rcpt = _rpc("eth_getTransactionReceipt", [tx])
+    n_incl = int(rcpt["blockNumber"], 16) if rcpt else None
     gap = time.time() - t0
+    if n_incl is None:
+        return Result("premise_staleness", "", "ERROR", "no receipt")
+
+    stale = n_incl > n_decide
     return Result(
         "premise_staleness",
-        "The state an agent decided on is still current when its tx lands",
-        "FINDING" if gap > 2 else "PASS",
-        (f"{gap:.1f}s elapsed between decision and inclusion. Nothing re-checks the "
-         "premise in that window: the transaction executes even if the condition that "
-         "justified it stopped holding. Simulation checks feasibility, not "
-         "justification."),
-        [tx] if tx else [r["executionId"]],
-        "MEDIUM" if gap > 2 else "-",
+        "The premise an agent decided on still holds when its tx is included",
+        "FINDING" if stale else "PASS",
+        (f"Decided at block {n_decide} on the premise 'block <= {n_decide}'. "
+         f"Included at block {n_incl}, {n_incl - n_decide} block(s) later "
+         f"({gap:.1f}s). The premise was FALSE at inclusion and the transaction "
+         "executed anyway. Simulation verifies feasibility, never justification, so "
+         "this is invisible: the transaction succeeds and reports success."
+         if stale else
+         f"Included in the same block ({n_incl}) it was decided on; premise held."),
+        [tx, f"decided@{n_decide}", f"included@{n_incl}"],
+        "HIGH" if stale else "-",
     )
 
 

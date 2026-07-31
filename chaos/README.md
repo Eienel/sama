@@ -20,10 +20,12 @@ omitted_key             FINDING   MEDIUM  retry without a key is safe by default
 concurrent_same_key     PASS      -       simultaneous retries -> one execution
 amount_formatting       FINDING   MEDIUM  equivalent amounts yield the same key
 cross_chain_key_scope   PASS      -       key reuse w/ different payload is caught
-premise_staleness       FINDING   MEDIUM  decided state still current when tx lands
+premise_staleness       FINDING   HIGH    premise still holds when tx is included
 ```
 
-**4 findings / 7 scenarios.**
+**4 findings / 7 scenarios** — two HIGH, and they are *different mechanisms*:
+`prose_drift` is the agent forgetting its exact words; `premise_staleness` is the world
+moving underneath it. Neither fix addresses the other.
 
 ## What KeeperHub got right
 
@@ -66,15 +68,28 @@ sufficient: values must be normalized (numbers parsed, addresses case-folded) be
 hashing. A model re-emitting a number in another format is enough to defeat a
 half-implemented fix.
 
-### MEDIUM — `premise_staleness`
+### HIGH — `premise_staleness`
 
-11.6s elapsed between the agent observing state and its transaction being included.
-Nothing re-checks the premise in that window. Simulation verifies the transaction
-*can* execute, never that the reason for it still holds.
+The agent reads chain height through KeeperHub, observes block N, and acts on the
+premise `block <= N` — true at the moment of decision. The transaction is then
+included at a later height, where that premise is false.
 
-Stated honestly: this scenario **measures the window, it does not yet prove harm.**
-Proving it requires mutating the observed state mid-window. That is the natural next
-scenario, and it is the failure a semantic key provably cannot catch.
+```
+decided  block 11392636   premise "block <= 11392636" holds
+included block 11392637   premise FALSE — transaction executed anyway
+tx 0x25ff5005192e91466df19706fa2e47ee9f25192d0da6d628e1ce79614b282dc5
+```
+
+Nothing anywhere notices. Simulation verifies the transaction *can* run, never that
+the reason for running it still holds, so the transaction succeeds and reports
+success while its justification has evaporated.
+
+**This is the failure a semantic idempotency key provably cannot catch** — the intent
+was never duplicated, it was stale. Different mechanism, different fix: re-check the
+premise at submission and abort rather than execute.
+
+Block height is a deliberately unarguable premise (it always advances). Real premises
+— a health factor, a price, an allowance — expire the same way and less predictably.
 
 ## Running
 
