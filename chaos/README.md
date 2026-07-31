@@ -22,11 +22,14 @@ amount_formatting       FINDING   MEDIUM  equivalent amounts yield the same key
 cross_chain_key_scope   PASS      -       key reuse w/ different payload is caught
 premise_staleness       FINDING   HIGH    premise still holds when tx is included
 conditional_staleness   FINDING   HIGH    a met condition gates the action atomically
+revert_reporting        PASS      -       a reverting call is reported as failed
+overdraft_transfer      PASS      -       unaffordable transfer rejected, no stuck nonce
 ```
 
-**5 findings / 8 scenarios** — two HIGH, and they are *different mechanisms*:
-`prose_drift` is the agent forgetting its exact words; `premise_staleness` is the world
-moving underneath it. Neither fix addresses the other.
+**5 findings / 10 scenarios** — three HIGH, and they are *different mechanisms*:
+`prose_drift` is the agent forgetting its exact words, `premise_staleness` is the world
+moving underneath hand-rolled code, and `conditional_staleness` is the world moving
+underneath KeeperHub's own guard. No one fix addresses the others.
 
 ## What KeeperHub got right
 
@@ -40,6 +43,12 @@ Worth stating first, because two of these were scenarios written expecting a fai
   silently applying the old result. That is the Stripe semantic done correctly, and it
   rules out a whole class of silent-lost-payment bugs.
 - Given a stable key, dedupe is exactly right.
+- **Failures are reported honestly.** A reverting ERC20 transfer reports
+  `status='failed'` with the revert reason attached, rather than the far more
+  dangerous "completed with no effect".
+- **Unaffordable sends are refused before submission**, with an actionable message
+  (`Insufficient ETH balance. Have: 0.05, Need: 1000000.0`) and no nonce consumed — so
+  a bad send cannot head-of-line block every later transaction from the wallet.
 
 ## The findings
 
@@ -138,7 +147,7 @@ def my_scenario(w: str) -> Result:
 Two rules, both learned from getting them wrong:
 
 1. **It must be able to come back clean.** A scenario that can only find problems is a
-   demo, not a test. Three of seven currently pass, and two of those were written
+   demo, not a test. Five of ten currently pass, and four of those were written
    expecting a failure.
 2. **Every FINDING carries verifiable evidence** — execution ids or transaction
    hashes a third party can check.

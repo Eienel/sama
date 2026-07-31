@@ -1,14 +1,22 @@
 [
   {
-    "name": "conditional_staleness",
-    "claim": "A met condition guarantees the action runs while it still holds",
-    "verdict": "FINDING",
-    "detail": "Condition 'block <= 11392654' evaluated true at block 11392654; the action was included at block 11392655, 1 block(s) later, where it is false. KeeperHub's own read-condition-act primitive carries the gap it exists to remove: the check and the action are not atomic, so the gate says 'only act while true' and delivers 'act if it was true a moment ago'. An agent that hand-rolls this at least knows it is racing.",
+    "name": "revert_reporting",
+    "claim": "A call that will revert is reported as failed, not completed",
+    "verdict": "PASS",
+    "detail": "Reported status='failed', error='Contract call failed: missing revert data (action=\"call\", data=null, reason=null'. The failure surfaces.",
     "evidence": [
-      "0x058bddf6da9ef46956e3cc408c048bb228fbe3d9e1fae3817a8cee75a43f7f49",
-      "checked@11392654",
-      "executed@11392655"
+      "ddk6gt79797njyumcdkum"
     ],
-    "severity": "HIGH"
+    "severity": "-"
+  },
+  {
+    "name": "overdraft_transfer",
+    "claim": "An unaffordable transfer is rejected cleanly, not left pending",
+    "verdict": "PASS",
+    "detail": "status='failed', error='Insufficient ETH balance. Have: 0.05, Need: 1000000.0'. Failed cleanly; no nonce consumed.",
+    "evidence": [
+      "yhhu1i2g0nh1uiyc6ioh7"
+    ],
+    "severity": "-"
   }
 ]

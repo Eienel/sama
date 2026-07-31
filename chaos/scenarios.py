@@ -364,6 +364,84 @@ def conditional_staleness(w: str) -> Result:
     )
 
 
+def revert_reporting(w: str) -> Result:
+    """A reverting call must be reported as failed, with a reason.
+
+    Reliability is only as good as its reporting. If a transaction that reverts is
+    reported as completed, every downstream guard an agent builds -- retries, alerts,
+    audit review -- is reading a lie.
+
+    ERC20 transfer of a balance we do not have: reverts deterministically.
+    """
+    huge = str(10 ** 30)
+    try:
+        out = json.loads(call_tool("execute_contract_call", {
+            "chain_id": SEPOLIA, "contract_address": WETH_SEPOLIA,
+            "function_name": "transfer", "function_args": json.dumps([w, huge]),
+            "idempotency_key": _key({"s": "revert", "n": time.time()})}))
+    except RuntimeError as e:
+        return Result(
+            "revert_reporting",
+            "A call that will revert is reported as failed, not completed",
+            "PASS",
+            f"Rejected before submission: {str(e)[:150]}",
+            [])
+
+    eid = out.get("executionId")
+    d = json.loads(call_tool("get_direct_execution_status", {"execution_id": eid})) \
+        if eid else out
+    status = str(d.get("status", "?"))
+    err = d.get("error")
+    honest = status not in ("completed", "success") or bool(err)
+    return Result(
+        "revert_reporting",
+        "A call that will revert is reported as failed, not completed",
+        "PASS" if honest else "FINDING",
+        (f"Reported status={status!r}, error={str(err)[:80]!r}. The failure surfaces."
+         if honest else
+         f"A transfer of 10^30 tokens from a wallet holding none reported "
+         f"status={status!r} with no error. A guaranteed-to-fail call is reported as "
+         "success, so any agent trusting the status field acts on a lie."),
+        [eid or "-"],
+        "-" if honest else "HIGH",
+    )
+
+
+def overdraft_transfer(w: str) -> Result:
+    """Sending more than the balance: clean rejection, or a stuck nonce?
+
+    A stuck transaction is the expensive failure -- it blocks every later transaction
+    from the same account by head-of-line ordering, so one bad send freezes the agent.
+    """
+    try:
+        out = json.loads(call_tool("execute_transfer", {
+            "chain_id": SEPOLIA, "to_address": w, "amount": "1000000",
+            "idempotency_key": _key({"s": "overdraft", "n": time.time()})}))
+    except RuntimeError as e:
+        return Result(
+            "overdraft_transfer",
+            "An unaffordable transfer is rejected cleanly, not left pending",
+            "PASS", f"Rejected up front: {str(e)[:150]}", [])
+
+    eid = out.get("executionId")
+    d = json.loads(call_tool("get_direct_execution_status", {"execution_id": eid}))
+    status = str(d.get("status", "?"))
+    stuck = status in ("pending", "submitted", "processing")
+    return Result(
+        "overdraft_transfer",
+        "An unaffordable transfer is rejected cleanly, not left pending",
+        "FINDING" if stuck else "PASS",
+        (f"status={status!r} -- left in flight. A transaction that can never succeed "
+         "occupies a nonce, and nonce ordering means every later transaction from this "
+         "wallet is blocked behind it."
+         if stuck else
+         f"status={status!r}, error={str(d.get('error'))[:70]!r}. Failed cleanly; "
+         "no nonce consumed."),
+        [eid],
+        "HIGH" if stuck else "-",
+    )
+
+
 SCENARIOS = [
     prose_drift,
     semantic_key_fix,
@@ -373,4 +451,6 @@ SCENARIOS = [
     cross_chain_key_scope,
     premise_staleness,
     conditional_staleness,
+    revert_reporting,
+    overdraft_transfer,
 ]
