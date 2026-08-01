@@ -23,6 +23,25 @@ self-feedback.
 
 A validator needs none of that, because its standing comes from published evidence.
 
+## What this record is, and is not
+
+**The agentId on our validation record is 9139, an identity we minted ourselves. It is
+not KeeperHub's agent.** KeeperHub's identity is 31875 on Ethereum mainnet, and it does
+not exist on Sepolia:
+
+```
+ownerOf(31875) on Sepolia IdentityRegistry -> revert ERC721NonexistentToken(31875)
+```
+
+So this is not a third-party rating of KeeperHub's registered agent, and describing it
+as one would be false. What it is: a working demonstration of the publication
+mechanism, and a hash-committed, timestamped publication of our verdict by a known
+validator address. The subject of the audit is named inside the record; the registry
+entry proves when we said it and that we have not restated it since.
+
+Validating KeeperHub's actual agent means publishing against 31875 on mainnet, which
+needs mainnet gas and is a decision to make deliberately rather than by default.
+
 ## Live onchain record
 
 Every transaction below was executed **through KeeperHub**, which is the point: the

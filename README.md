@@ -7,7 +7,7 @@ simulation, transaction and outcome, and nobody reads it back.
 This is a chaos harness that deliberately breaks agent execution through KeeperHub and
 reports what survives: with transaction hashes for every claim.
 
-**12 scenarios · 6 findings · 4 HIGH · 6 passes.** Every run executes real transactions
+**12 scenarios · 6 findings · 2 HIGH · 4 MEDIUM · 6 passes.** Every run executes real transactions
 on Ethereum Sepolia. Gas is sponsored and transfers are self-directed, so a full pass
 costs nothing and is repeatable indefinitely.
 
@@ -29,19 +29,21 @@ parallel_distinct_transfers PASS      -       nonce ordering holds under load
 
 ## The four HIGH findings
 
-**1. `conditional_staleness`: the headline.** `execute_check_and_execute` is
-KeeperHub's own read-condition-act primitive, offered so agents don't hand-roll it. The
-condition is evaluated at one block and the action lands at a later one:
+**1. `conditional_staleness` (MEDIUM).** `execute_check_and_execute` is KeeperHub's own
+read-condition-act primitive. The condition is evaluated at one block and the action
+lands at a later one:
 
 ```
 condition "block <= 11392654"  TRUE at block 11392654
 action                          included at 11392655: condition FALSE
 ```
 
-The gate advertises *"only act while this is true"* and delivers *"act if it was true a
-moment ago"*. This is worse than hand-rolling: an agent writing its own read-then-act
-knows it is racing, while one handed a conditional primitive assumes the condition is
-enforced.
+**Stated fairly: off-chain check-then-act cannot be atomic, so this is inherent rather
+than a defect.** The issue is that nothing says so. The primitive's name and shape imply
+the condition gates the action, and an agent handed it reasonably assumes enforcement at
+execution. Documented, this is a caveat; undocumented, it is a trap. A real fix needs an
+on-chain guard that re-checks in the same transaction. We originally rated this HIGH and
+that overstated it.
 
 **2. `silent_noop_node`: a green run for an automation that never ran.** An action node
 missing `actionType` is accepted at creation and silently skipped at execution:

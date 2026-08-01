@@ -26,8 +26,8 @@
     "verdict": "FINDING",
     "detail": "Two identical transfers, two executions. Duplicate protection is opt-in: an agent that never sets idempotency_key has none, and nothing warns it.",
     "evidence": [
-      "a3povzsfdpp7wzaqfisas",
-      "3y62dls3yo87womf36cbm"
+      "g225883zzojj3l8n3b6l5",
+      "rmpez3t6j7r9c6an4u13p"
     ],
     "severity": "MEDIUM"
   },
@@ -37,7 +37,7 @@
     "verdict": "PASS",
     "detail": "4 concurrent calls -> 1 execution, 3 rejected 409 'already being processed'. The dedupe is atomic under concurrency: the race is serialised server-side rather than racing through.",
     "evidence": [
-      "7jehqbil0ydsantlmwm8q"
+      "wwtdz4yiw7j4y94s4b5v5"
     ],
     "severity": "-"
   },
@@ -58,7 +58,7 @@
     "verdict": "PASS",
     "detail": "409 'Idempotency-Key was reused with a different request payload'. The key is bound to the payload, so a cross-chain reuse is rejected outright rather than silently suppressing a legitimate transfer. This is the Stripe semantic done correctly.",
     "evidence": [
-      "wxugnc5lhu23ns7g73ryy"
+      "xqf8t4a8qbpnrlah9azls"
     ],
     "severity": "-"
   },
@@ -66,33 +66,33 @@
     "name": "premise_staleness",
     "claim": "The premise an agent decided on still holds when its tx is included",
     "verdict": "FINDING",
-    "detail": "Decided at block 11394643 on the premise 'block <= 11394643'. Included at block 11394644, 1 block(s) later (10.7s). The premise was FALSE at inclusion and the transaction executed anyway. Simulation verifies feasibility, never justification, so this is invisible: the transaction succeeds and reports success.",
+    "detail": "Decided at block 11395512 on the premise 'block <= 11395512'. Included at block 11395515, 3 block(s) later (33.4s). The premise was FALSE at inclusion and the transaction executed anyway. Simulation verifies feasibility, never justification, so this is invisible: the transaction succeeds and reports success.",
     "evidence": [
-      "0xf7e2c26c3c44055f1e2ff050013c30d160b9be110ff17b2e6d3c91b9a8ba48dd",
-      "decided@11394643",
-      "included@11394644"
+      "0xc24e1485111ce3a195003fb580688415b2c4c21d7b13250ebcdf63b01fb36b0a",
+      "decided@11395512",
+      "included@11395515"
     ],
-    "severity": "HIGH"
+    "severity": "MEDIUM"
   },
   {
     "name": "conditional_staleness",
-    "claim": "A met condition guarantees the action runs while it still holds",
+    "claim": "The condition gate documents that it is not atomic with the action",
     "verdict": "FINDING",
-    "detail": "Condition 'block <= 11394644' evaluated true at block 11394644; the action was included at block 11394645, 1 block(s) later, where it is false. KeeperHub's own read-condition-act primitive carries the gap it exists to remove: the check and the action are not atomic, so the gate says 'only act while true' and delivers 'act if it was true a moment ago'. An agent that hand-rolls this at least knows it is racing.",
+    "detail": "Condition 'block <= 11395515' evaluated true at block 11395515; the action was included at block 11395516, 1 block(s) later, where it is false. KeeperHub's own read-condition-act primitive carries the gap it exists to remove. Off-chain check-then-act cannot be atomic, so this is inherent rather than a defect: the issue is that nothing says so. The name and shape of the primitive imply the condition gates the action, and an agent handed it reasonably assumes enforcement at execution. Documented, this is a caveat; undocumented, it is a trap. A real fix needs an on-chain guard that re-checks in the same transaction.",
     "evidence": [
-      "0xefec90f9ab936aa83afe5ea8272bd26067f80548c2f87929b57bb3091e32a38e",
-      "checked@11394644",
-      "executed@11394645"
+      "0xca356ed7a91311c0718e41dbf0fa6c72556fc7ba1c31e5f797525a06a4f7fd5c",
+      "checked@11395515",
+      "executed@11395516"
     ],
-    "severity": "HIGH"
+    "severity": "MEDIUM"
   },
   {
     "name": "revert_reporting",
     "claim": "A call that will revert is reported as failed, not completed",
     "verdict": "PASS",
-    "detail": "Reported status='failed', error='Contract call failed: missing revert data (action=\"call\", data=null, reason=null'. The failure surfaces.",
+    "detail": "Reported status='failed', error='Contract call failed: execution reverted (no data present; likely require(false)'. The failure surfaces.",
     "evidence": [
-      "bqozqltcaol1epx3lpl5i"
+      "7ccvjh2joixat60rgaibb"
     ],
     "severity": "-"
   },
@@ -102,7 +102,7 @@
     "verdict": "PASS",
     "detail": "status='failed', error='Insufficient ETH balance. Have: 0.05, Need: 1000000.0'. Failed cleanly; no nonce consumed.",
     "evidence": [
-      "e541aj8xjall8ovczde4r"
+      "r9nqbhd2wks1pzktkpk5j"
     ],
     "severity": "-"
   },
@@ -123,9 +123,9 @@
     "verdict": "PASS",
     "detail": "All 5 concurrent transfers completed. Nonces are allocated and submitted correctly under parallel load, so a busy agent does not head-of-line block itself: the failure mode that freezes naive senders.",
     "evidence": [
-      "5u28a4r2e5b4jh0sxqd6b",
-      "836fclxbgztt4kbyacdy9",
-      "8oocujpbiwk03kw0ltxuz"
+      "mkm6e2qzcsu1unj4xpvhh",
+      "kmknur9sf0sh7vcxyli2h",
+      "74hqdtj96o5l633blax92"
     ],
     "severity": "-"
   }

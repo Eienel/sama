@@ -52,7 +52,7 @@ cites evidence you can verify yourself.</p>
 <div class=stats>
   <div class=stat><b>12</b><span>scenarios</span></div>
   <div class=stat><b>6</b><span>findings</span></div>
-  <div class=stat><b>4</b><span>high severity</span></div>
+  <div class=stat><b>2</b><span>high severity</span></div>
   <div class=stat><b>6</b><span>passed</span></div>
 </div>
 
@@ -85,12 +85,12 @@ cites evidence you can verify yourself.</p>
       <td>Reusing a key with a different payload is caught, not silently applied</td></tr><tr class="finding">
       <td><code>premise_staleness</code></td>
       <td><span class="v finding">FINDING</span></td>
-      <td><span class="s high">HIGH</span></td>
+      <td><span class="s med">MEDIUM</span></td>
       <td>The premise an agent decided on still holds when its tx is included</td></tr><tr class="finding">
       <td><code>conditional_staleness</code></td>
       <td><span class="v finding">FINDING</span></td>
-      <td><span class="s high">HIGH</span></td>
-      <td>A met condition guarantees the action runs while it still holds</td></tr><tr class="pass">
+      <td><span class="s med">MEDIUM</span></td>
+      <td>The condition gate documents that it is not atomic with the action</td></tr><tr class="pass">
       <td><code>revert_reporting</code></td>
       <td><span class="v pass">PASS</span></td>
       <td><span class="s none">-</span></td>
@@ -119,19 +119,19 @@ happened when we leaned on it.</p>
           <h3><span class="s med">MEDIUM</span> <code>omitted_key</code></h3>
           <p class="claim">Claim tested: Retrying an identical transfer without a key is safe by default</p>
           <p>Two identical transfers, two executions. Duplicate protection is opt-in: an agent that never sets idempotency_key has none, and nothing warns it.</p>
-          <p class="ev"><code>a3povzsfdpp7wzaqfisas</code> <code>3y62dls3yo87womf36cbm</code></p></article><article class="med">
+          <p class="ev"><code>g225883zzojj3l8n3b6l5</code> <code>rmpez3t6j7r9c6an4u13p</code></p></article><article class="med">
           <h3><span class="s med">MEDIUM</span> <code>amount_formatting</code></h3>
           <p class="claim">Claim tested: Equivalent amount strings yield the same semantic key</p>
           <p>&#x27;0.001&#x27; and &#x27;0.0010&#x27; are the same transfer but hash differently, so even the semantic key double-spends unless amounts are normalized before hashing. A model re-emitting a number in another format is enough.</p>
-          <p class="ev"><code>3asp0ypmgerj11vn39o7f</code> <code>59n6kaz5mzub429mzrqwz</code></p></article><article class="high">
-          <h3><span class="s high">HIGH</span> <code>premise_staleness</code></h3>
+          <p class="ev"><code>3asp0ypmgerj11vn39o7f</code> <code>59n6kaz5mzub429mzrqwz</code></p></article><article class="med">
+          <h3><span class="s med">MEDIUM</span> <code>premise_staleness</code></h3>
           <p class="claim">Claim tested: The premise an agent decided on still holds when its tx is included</p>
-          <p>Decided at block 11394643 on the premise &#x27;block &lt;= 11394643&#x27;. Included at block 11394644, 1 block(s) later (10.7s). The premise was FALSE at inclusion and the transaction executed anyway. Simulation verifies feasibility, never justification, so this is invisible: the transaction succeeds and reports success.</p>
-          <p class="ev"><a href="https://sepolia.etherscan.io/tx/0xf7e2c26c3c44055f1e2ff050013c30d160b9be110ff17b2e6d3c91b9a8ba48dd" target="_blank" rel="noopener">0xf7e2c26c…ba48dd</a> <code>decided@11394643</code> <code>included@11394644</code></p></article><article class="high">
-          <h3><span class="s high">HIGH</span> <code>conditional_staleness</code></h3>
-          <p class="claim">Claim tested: A met condition guarantees the action runs while it still holds</p>
-          <p>Condition &#x27;block &lt;= 11394644&#x27; evaluated true at block 11394644; the action was included at block 11394645, 1 block(s) later, where it is false. KeeperHub&#x27;s own read-condition-act primitive carries the gap it exists to remove: the check and the action are not atomic, so the gate says &#x27;only act while true&#x27; and delivers &#x27;act if it was true a moment ago&#x27;. An agent that hand-rolls this at least knows it is racing.</p>
-          <p class="ev"><a href="https://sepolia.etherscan.io/tx/0xefec90f9ab936aa83afe5ea8272bd26067f80548c2f87929b57bb3091e32a38e" target="_blank" rel="noopener">0xefec90f9…32a38e</a> <code>checked@11394644</code> <code>executed@11394645</code></p></article><article class="high">
+          <p>Decided at block 11395512 on the premise &#x27;block &lt;= 11395512&#x27;. Included at block 11395515, 3 block(s) later (33.4s). The premise was FALSE at inclusion and the transaction executed anyway. Simulation verifies feasibility, never justification, so this is invisible: the transaction succeeds and reports success.</p>
+          <p class="ev"><a href="https://sepolia.etherscan.io/tx/0xc24e1485111ce3a195003fb580688415b2c4c21d7b13250ebcdf63b01fb36b0a" target="_blank" rel="noopener">0xc24e1485…b36b0a</a> <code>decided@11395512</code> <code>included@11395515</code></p></article><article class="med">
+          <h3><span class="s med">MEDIUM</span> <code>conditional_staleness</code></h3>
+          <p class="claim">Claim tested: The condition gate documents that it is not atomic with the action</p>
+          <p>Condition &#x27;block &lt;= 11395515&#x27; evaluated true at block 11395515; the action was included at block 11395516, 1 block(s) later, where it is false. KeeperHub&#x27;s own read-condition-act primitive carries the gap it exists to remove. Off-chain check-then-act cannot be atomic, so this is inherent rather than a defect: the issue is that nothing says so. The name and shape of the primitive imply the condition gates the action, and an agent handed it reasonably assumes enforcement at execution. Documented, this is a caveat; undocumented, it is a trap. A real fix needs an on-chain guard that re-checks in the same transaction.</p>
+          <p class="ev"><a href="https://sepolia.etherscan.io/tx/0xca356ed7a91311c0718e41dbf0fa6c72556fc7ba1c31e5f797525a06a4f7fd5c" target="_blank" rel="noopener">0xca356ed7…f7fd5c</a> <code>checked@11395515</code> <code>executed@11395516</code></p></article><article class="high">
           <h3><span class="s high">HIGH</span> <code>silent_noop_node</code></h3>
           <p class="claim">Claim tested: A workflow whose action node never runs does not report success</p>
           <p>status=&#x27;success&#x27; but executionTrace=[&#x27;trigger-1&#x27;]: the action node was skipped and the run still reported success, with error=None. The node was missing `actionType`; supplying it makes creation reject the workflow for a missing `abi`, so the *less* complete definition passes validation and silently does nothing, while the more complete one is caught. An agent sees a green run and an audit trail of success for an automation that never ran.</p>
@@ -145,6 +145,6 @@ Reverts report as failures with a reason. Unaffordable sends are refused before
 submission with no nonce consumed. Concurrent transfers all land, so a busy agent does
 not head-of-line block itself. This is a test suite, not a hit piece.</p>
 
-<footer>Built 2026-08-01 06:30 UTC from <code>chaos/last_run.json</code>.
+<footer>Built 2026-08-01 09:29 UTC from <code>chaos/last_run.json</code>.
 Transactions on Ethereum Sepolia. Gas sponsored by KeeperHub.</footer>
 </div></body></html>

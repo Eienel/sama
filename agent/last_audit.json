@@ -2,6 +2,41 @@
   "report": {
     "findings": [
       {
+        "claim": "Hashing the whole payload gives a stable idempotency key across a retry",
+        "evidence": "0x2bmaswm8hvyf64myn9r, i41oy3em8vm436g7kfdw4",
+        "probe": "prose_drift",
+        "severity": "HIGH",
+        "verified": true
+      },
+      {
+        "claim": "Retrying an identical transfer without a key is safe by default",
+        "evidence": "buzla4eogf285ys72gv5b, jcz0jcah8vtqbsdo8p0z7",
+        "probe": "omitted_key",
+        "severity": "MEDIUM",
+        "verified": true
+      },
+      {
+        "claim": "Equivalent amount strings yield the same semantic key",
+        "evidence": "3asp0ypmgerj11vn39o7f, 59n6kaz5mzub429mzrqwz",
+        "probe": "amount_formatting",
+        "severity": "MEDIUM",
+        "verified": true
+      },
+      {
+        "claim": "The premise an agent decided on still holds when its tx is included",
+        "evidence": "0x1ab4c79cccac1c3e542551f3e18b45a5255156032f7f9d380743d88c81e1a754, decided@11395486, included@11395487",
+        "probe": "premise_staleness",
+        "severity": "MEDIUM",
+        "verified": false
+      },
+      {
+        "claim": "The condition gate documents that it is not atomic with the action",
+        "evidence": "0xb3fc711a0c5910c226a1fc2e2b76e2738706b5b119149fb5aa4219b2416fc6ca, checked@11395487, executed@11395488",
+        "probe": "conditional_staleness",
+        "severity": "MEDIUM",
+        "verified": false
+      },
+      {
         "claim": "A workflow whose action node never runs does not report success",
         "evidence": "trace=['trigger-1'], status=success",
         "probe": "silent_noop_node",
@@ -10,11 +45,123 @@
       }
     ],
     "passes": [
-      "revert_reporting"
+      "semantic_key_fix",
+      "concurrent_same_key",
+      "cross_chain_key_scope",
+      "revert_reporting",
+      "overdraft_transfer",
+      "parallel_distinct_transfers"
     ],
-    "summary": "KeeperHub's execution guarantees hold for revert reporting but may have issues with idempotency"
+    "summary": "KeeperHub's execution guarantees mostly hold, with some caveats. Idempotency keys are not stable across retries unless only the semantic surface is hashed. Retrying an identical transfer without a key can lead to duplicate executions. Equivalent amount strings do not yield the same semantic key. Premise staleness can cause transactions to execute with an expired premise. The condition gate is not atomic with the action. A workflow with a skipped action node can still report success. However, concurrent distinct transfers are handled correctly, and reverting calls are reported as failed. Cross-chain key scope and overdraft transfers are also handled as expected."
   },
   "probes": [
+    {
+      "name": "prose_drift",
+      "claim": "Hashing the whole payload gives a stable idempotency key across a retry",
+      "verdict": "FINDING",
+      "detail": "Same transaction, two executions. The payloads differ only in a free-text `reason` field the model rewrote: observed verbatim from llama-3.3-70b and gpt-oss-120b at temperature 0.",
+      "evidence": [
+        "0x2bmaswm8hvyf64myn9r",
+        "i41oy3em8vm436g7kfdw4"
+      ],
+      "severity": "HIGH"
+    },
+    {
+      "name": "semantic_key_fix",
+      "claim": "Hashing only the semantic surface survives prose drift",
+      "verdict": "PASS",
+      "detail": "Both retries collapsed to one execution.",
+      "evidence": [
+        "3asp0ypmgerj11vn39o7f"
+      ],
+      "severity": "-"
+    },
+    {
+      "name": "omitted_key",
+      "claim": "Retrying an identical transfer without a key is safe by default",
+      "verdict": "FINDING",
+      "detail": "Two identical transfers, two executions. Duplicate protection is opt-in: an agent that never sets idempotency_key has none, and nothing warns it.",
+      "evidence": [
+        "buzla4eogf285ys72gv5b",
+        "jcz0jcah8vtqbsdo8p0z7"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "name": "concurrent_same_key",
+      "claim": "Simultaneous retries with one key produce exactly one execution",
+      "verdict": "PASS",
+      "detail": "4 concurrent calls -> 1 execution, 3 rejected 409 'already being processed'. The dedupe is atomic under concurrency: the race is serialised server-side rather than racing through.",
+      "evidence": [
+        "0ncubfr1b0scw89p2xhw6"
+      ],
+      "severity": "-"
+    },
+    {
+      "name": "amount_formatting",
+      "claim": "Equivalent amount strings yield the same semantic key",
+      "verdict": "FINDING",
+      "detail": "'0.001' and '0.0010' are the same transfer but hash differently, so even the semantic key double-spends unless amounts are normalized before hashing. A model re-emitting a number in another format is enough.",
+      "evidence": [
+        "3asp0ypmgerj11vn39o7f",
+        "59n6kaz5mzub429mzrqwz"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "name": "cross_chain_key_scope",
+      "claim": "Reusing a key with a different payload is caught, not silently applied",
+      "verdict": "PASS",
+      "detail": "409 'Idempotency-Key was reused with a different request payload'. The key is bound to the payload, so a cross-chain reuse is rejected outright rather than silently suppressing a legitimate transfer. This is the Stripe semantic done correctly.",
+      "evidence": [
+        "aj7u09o54ammutpwuib5x"
+      ],
+      "severity": "-"
+    },
+    {
+      "name": "premise_staleness",
+      "claim": "The premise an agent decided on still holds when its tx is included",
+      "verdict": "FINDING",
+      "detail": "Decided at block 11395486 on the premise 'block <= 11395486'. Included at block 11395487, 1 block(s) later (12.6s). The premise was FALSE at inclusion and the transaction executed anyway. Simulation verifies feasibility, never justification, so this is invisible: the transaction succeeds and reports success.",
+      "evidence": [
+        "0x1ab4c79cccac1c3e542551f3e18b45a5255156032f7f9d380743d88c81e1a754",
+        "decided@11395486",
+        "included@11395487"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "name": "conditional_staleness",
+      "claim": "The condition gate documents that it is not atomic with the action",
+      "verdict": "FINDING",
+      "detail": "Condition 'block <= 11395487' evaluated true at block 11395487; the action was included at block 11395488, 1 block(s) later, where it is false. KeeperHub's own read-condition-act primitive carries the gap it exists to remove. Off-chain check-then-act cannot be atomic, so this is inherent rather than a defect: the issue is that nothing says so. The name and shape of the primitive imply the condition gates the action, and an agent handed it reasonably assumes enforcement at execution. Documented, this is a caveat; undocumented, it is a trap. A real fix needs an on-chain guard that re-checks in the same transaction.",
+      "evidence": [
+        "0xb3fc711a0c5910c226a1fc2e2b76e2738706b5b119149fb5aa4219b2416fc6ca",
+        "checked@11395487",
+        "executed@11395488"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "name": "revert_reporting",
+      "claim": "A call that will revert is reported as failed, not completed",
+      "verdict": "PASS",
+      "detail": "Reported status='failed', error='Contract call failed: execution reverted (no data present; likely require(false)'. The failure surfaces.",
+      "evidence": [
+        "cc7sy841lhi859wshk9y2"
+      ],
+      "severity": "-"
+    },
+    {
+      "name": "overdraft_transfer",
+      "claim": "An unaffordable transfer is rejected cleanly, not left pending",
+      "verdict": "PASS",
+      "detail": "status='failed', error='Insufficient ETH balance. Have: 0.05, Need: 1000000.0'. Failed cleanly; no nonce consumed.",
+      "evidence": [
+        "rcl6x3vk7ryneso98jnyp"
+      ],
+      "severity": "-"
+    },
     {
       "name": "silent_noop_node",
       "claim": "A workflow whose action node never runs does not report success",
@@ -27,12 +174,14 @@
       "severity": "HIGH"
     },
     {
-      "name": "revert_reporting",
-      "claim": "A call that will revert is reported as failed, not completed",
+      "name": "parallel_distinct_transfers",
+      "claim": "Concurrent distinct transfers all land; none blocks the others",
       "verdict": "PASS",
-      "detail": "Reported status='failed', error='Contract call failed: execution reverted (no data present; likely require(false)'. The failure surfaces.",
+      "detail": "All 5 concurrent transfers completed. Nonces are allocated and submitted correctly under parallel load, so a busy agent does not head-of-line block itself: the failure mode that freezes naive senders.",
       "evidence": [
-        "31k6s8uip6xru1orwnp2d"
+        "qv9blrfjx4o6yjywuaj59",
+        "tffced7wkdrlo8m3php37",
+        "3jaixr9rl9c6tn7d83u89"
       ],
       "severity": "-"
     }

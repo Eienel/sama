@@ -7,9 +7,9 @@
   "validation_registry": "0x8004Cb1BF31DAf7788923b405b754f57acEB4272",
   "chain": "11155111",
   "last_publish": {
-    "hash": "0xef579b6850da7a4169b8550e018edd2a29832bd2bc3c3b52ce64b02d881df09b",
-    "score": 38,
-    "request_tx": "0x4f609912395866c39c5ef3ff874b6972bc7262fa0bcfc96a8ce41ef43f3bfd66",
-    "response_tx": "0x2241db718b260ae0d7850060ce77f39275e7dfc5c55b6f5a3c7e59a1d42401e4"
+    "hash": "0xa367a084a6527259d61e2f9540fa2ced7fe772ea1e90a58bca36ef7ef3ac4b0d",
+    "score": 43,
+    "request_tx": "0x7f607586189bc96db47f0ddd44f655f351a4a84a5000af8c0f8fd21b33dd7e24",
+    "response_tx": "0x9378fa1bcc730bf664a07617d06c91dd54a9f873676b4c6a3f4b4317415a4e75"
   }
 }

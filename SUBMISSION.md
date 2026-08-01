@@ -5,9 +5,9 @@ Everything needed for the DoraHacks BUIDL entry, plus the demo script.
 ## The one-liner
 
 KeeperHub says 76% of 2025 DeFi losses came from infrastructure rather than code. We
-built the agent that checks whether their infrastructure holds, found four HIGH issues
-including one in their own conditional-execution primitive, and published the verdict
-onchain to the ERC-8004 registry they left empty.
+built the agent that checks whether their infrastructure holds, found six issues including a
+reproducible double-spend and a workflow that reports success while doing nothing, and
+published the verdict onchain to the ERC-8004 registry they left empty.
 
 ## Required fields
 
@@ -38,8 +38,8 @@ create/update/execute, `get_execution`, the audit trail, the marketplace
 (`list_workflow`, `call_workflow`), and x402 as a seller with a listing priced at 0.01
 USDC on Base.
 
-**Reliability and observability.** This is the whole project. 12 scenarios, 6 findings,
-4 HIGH, 6 passes, every claim carrying a transaction hash.
+**Reliability and observability.** This is the whole project. 12 scenarios, 6 findings
+(2 HIGH, 4 MEDIUM), 6 passes, every claim carrying a transaction hash.
 
 **Originality.** The findings are not reproductions of known issues. The staleness gap
 in `execute_check_and_execute` and the silent no-op on a workflow node were both found
@@ -85,6 +85,16 @@ checker verified. Any agent can now read this score before trusting an execution
 
 ## What we would say if asked what is weak
 
+- **The ERC-8004 record is attached to agent 9139, an identity we minted ourselves.**
+  It is not a rating of KeeperHub's agent, which is 31875 on mainnet and does not exist
+  on Sepolia. It demonstrates the mechanism and timestamps our verdict; it is not a
+  third-party score, and we will not present it as one.
+- **Both staleness findings are inherent, not defects.** Off-chain check-then-act cannot
+  be atomic. The defensible claim is that it is undocumented and the primitive's name
+  implies a guarantee it cannot give. We rated these HIGH initially and that was wrong;
+  they are MEDIUM documentation gaps.
+- **The marketplace listing is thin.** It returns a block height for 0.01 USDC. It
+  proves the x402 plumbing works, not that anyone would buy it.
 - Sepolia, not mainnet. The registries are the same code at canonical testnet proxies.
 - We are the seller side of x402. The buyer half needs USDC on Base, which we did not
   fund.

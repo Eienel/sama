@@ -301,7 +301,7 @@ def premise_staleness(w: str) -> Result:
          if stale else
          f"Included in the same block ({n_incl}) it was decided on; premise held."),
         [tx, f"decided@{n_decide}", f"included@{n_incl}"],
-        "HIGH" if stale else "-",
+        "MEDIUM" if stale else "-",
     )
 
 
@@ -334,7 +334,7 @@ def conditional_staleness(w: str) -> Result:
 
     if not out.get("executed"):
         return Result("conditional_staleness",
-                      "A met condition guarantees the action runs while it still holds",
+                      "The condition gate documents that it is not atomic with the action",
                       "PASS", "Condition not met; nothing executed.", [])
 
     observed = int(out.get("conditionResult", {}).get("observedValue", n))
@@ -349,18 +349,21 @@ def conditional_staleness(w: str) -> Result:
     stale = incl > observed
     return Result(
         "conditional_staleness",
-        "A met condition guarantees the action runs while it still holds",
+        "The condition gate documents that it is not atomic with the action",
         "FINDING" if stale else "PASS",
         (f"Condition 'block <= {observed}' evaluated true at block {observed}; the "
          f"action was included at block {incl}, {incl - observed} block(s) later, "
          "where it is false. KeeperHub's own read-condition-act primitive carries the "
-         "gap it exists to remove: the check and the action are not atomic, so the "
-         "gate says 'only act while true' and delivers 'act if it was true a moment "
-         "ago'. An agent that hand-rolls this at least knows it is racing."
+         "gap it exists to remove. Off-chain check-then-act cannot be atomic, so this "
+         "is inherent rather than a defect: the issue is that nothing says so. The "
+         "name and shape of the primitive imply the condition gates the action, and "
+         "an agent handed it reasonably assumes enforcement at execution. Documented, "
+         "this is a caveat; undocumented, it is a trap. A real fix needs an on-chain "
+         "guard that re-checks in the same transaction."
          if stale else
          f"Condition and action both at block {incl}; the gate held."),
         [tx, f"checked@{observed}", f"executed@{incl}"],
-        "HIGH" if stale else "-",
+        "MEDIUM" if stale else "-",
     )
 
 

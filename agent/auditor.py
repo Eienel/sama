@@ -36,7 +36,11 @@ KeeperHub claims to be a reliable execution layer for agents. Your job is to fin
 where that holds and where it does not, by running real probes against live
 infrastructure and reading back what actually happened onchain.
 
-You have a budget of tool calls. Spend it well:
+Cover the whole surface. Call list_probes first, then run EVERY probe it lists before
+reporting. A two-probe audit is not an audit: a claim you never tested is a claim you
+cannot speak to, and the passes matter as much as the failures.
+
+Then:
 - Prefer probes that could plausibly come back clean. A test that can only fail is not
   evidence, it is theatre.
 - When a probe reports a FINDING, verify it before believing it. Read the execution
@@ -182,6 +186,12 @@ class Auditor:
                 problems.append(f"passes lists {p!r}, which was never run")
             elif ran[p].verdict != "PASS":
                 problems.append(f"passes lists {p!r} but it returned {ran[p].verdict}")
+
+        unrun = [n for n in self.probes if n not in ran]
+        if unrun:
+            problems.append(
+                f"{len(unrun)} probe(s) were never run: {unrun}. Run every probe "
+                "before reporting; an untested claim cannot be spoken to.")
 
         missing = [n for n, r in ran.items()
                    if r.verdict == "FINDING"

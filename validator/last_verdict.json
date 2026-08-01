@@ -1,14 +1,17 @@
 {
-  "score": 38,
-  "scored_at": "2026-08-01T06:30:17Z",
-  "subject": "KeeperHub execution layer",
+  "score": 43,
+  "scored_at": "2026-08-01T09:28:41Z",
+  "subject": "KeeperHub execution layer (audited system)",
+  "subject_agent_id": null,
+  "record_agent_id": 9139,
+  "record_caveat": "The ERC-8004 agentId on this record is 9139, an identity this project minted for itself. It is NOT KeeperHub's agent. KeeperHub's identity is 31875 on Ethereum mainnet and does not exist on Sepolia (ownerOf(31875) reverts ERC721NonexistentToken). This record therefore demonstrates the publication mechanism and commits our verdict to chain; it is not a third-party rating of KeeperHub's registered agent.",
   "method": "chaos harness, live transactions on Ethereum Sepolia",
   "scoring": "share of tested guarantees that held; HIGH findings weighted double",
   "totals": {
     "scenarios": 12,
     "passed": 6,
     "findings": 6,
-    "high": 4
+    "high": 2
   },
   "results": [
     {
@@ -36,8 +39,8 @@
       "severity": "MEDIUM",
       "claim": "Retrying an identical transfer without a key is safe by default",
       "evidence": [
-        "a3povzsfdpp7wzaqfisas",
-        "3y62dls3yo87womf36cbm"
+        "g225883zzojj3l8n3b6l5",
+        "rmpez3t6j7r9c6an4u13p"
       ]
     },
     {
@@ -46,7 +49,7 @@
       "severity": "-",
       "claim": "Simultaneous retries with one key produce exactly one execution",
       "evidence": [
-        "7jehqbil0ydsantlmwm8q"
+        "wwtdz4yiw7j4y94s4b5v5"
       ]
     },
     {
@@ -65,29 +68,29 @@
       "severity": "-",
       "claim": "Reusing a key with a different payload is caught, not silently applied",
       "evidence": [
-        "wxugnc5lhu23ns7g73ryy"
+        "xqf8t4a8qbpnrlah9azls"
       ]
     },
     {
       "scenario": "premise_staleness",
       "verdict": "FINDING",
-      "severity": "HIGH",
+      "severity": "MEDIUM",
       "claim": "The premise an agent decided on still holds when its tx is included",
       "evidence": [
-        "0xf7e2c26c3c44055f1e2ff050013c30d160b9be110ff17b2e6d3c91b9a8ba48dd",
-        "decided@11394643",
-        "included@11394644"
+        "0xc24e1485111ce3a195003fb580688415b2c4c21d7b13250ebcdf63b01fb36b0a",
+        "decided@11395512",
+        "included@11395515"
       ]
     },
     {
       "scenario": "conditional_staleness",
       "verdict": "FINDING",
-      "severity": "HIGH",
-      "claim": "A met condition guarantees the action runs while it still holds",
+      "severity": "MEDIUM",
+      "claim": "The condition gate documents that it is not atomic with the action",
       "evidence": [
-        "0xefec90f9ab936aa83afe5ea8272bd26067f80548c2f87929b57bb3091e32a38e",
-        "checked@11394644",
-        "executed@11394645"
+        "0xca356ed7a91311c0718e41dbf0fa6c72556fc7ba1c31e5f797525a06a4f7fd5c",
+        "checked@11395515",
+        "executed@11395516"
       ]
     },
     {
@@ -96,7 +99,7 @@
       "severity": "-",
       "claim": "A call that will revert is reported as failed, not completed",
       "evidence": [
-        "bqozqltcaol1epx3lpl5i"
+        "7ccvjh2joixat60rgaibb"
       ]
     },
     {
@@ -105,7 +108,7 @@
       "severity": "-",
       "claim": "An unaffordable transfer is rejected cleanly, not left pending",
       "evidence": [
-        "e541aj8xjall8ovczde4r"
+        "r9nqbhd2wks1pzktkpk5j"
       ]
     },
     {
@@ -124,9 +127,9 @@
       "severity": "-",
       "claim": "Concurrent distinct transfers all land; none blocks the others",
       "evidence": [
-        "5u28a4r2e5b4jh0sxqd6b",
-        "836fclxbgztt4kbyacdy9",
-        "8oocujpbiwk03kw0ltxuz"
+        "mkm6e2qzcsu1unj4xpvhh",
+        "kmknur9sf0sh7vcxyli2h",
+        "74hqdtj96o5l633blax92"
       ]
     }
   ]

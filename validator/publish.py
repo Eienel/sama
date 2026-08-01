@@ -119,7 +119,16 @@ def summarize_run() -> dict:
     return {
         "score": score,
         "scored_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "subject": "KeeperHub execution layer",
+        "subject": "KeeperHub execution layer (audited system)",
+        "subject_agent_id": None,
+        "record_agent_id": 9139,
+        "record_caveat": (
+            "The ERC-8004 agentId on this record is 9139, an identity this project "
+            "minted for itself. It is NOT KeeperHub's agent. KeeperHub's identity is "
+            "31875 on Ethereum mainnet and does not exist on Sepolia "
+            "(ownerOf(31875) reverts ERC721NonexistentToken). This record therefore "
+            "demonstrates the publication mechanism and commits our verdict to chain; "
+            "it is not a third-party rating of KeeperHub's registered agent."),
         "method": "chaos harness, live transactions on Ethereum Sepolia",
         "scoring": "share of tested guarantees that held; HIGH findings weighted double",
         "totals": {"scenarios": total, "passed": passes,
