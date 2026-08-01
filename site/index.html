@@ -114,27 +114,27 @@ happened when we leaned on it.</p>
 <article class="high">
           <h3><span class="s high">HIGH</span> <code>prose_drift</code></h3>
           <p class="claim">Claim tested: Hashing the whole payload gives a stable idempotency key across a retry</p>
-          <p>Same transaction, two executions. The payloads differ only in a free-text `reason` field the model rewrote -- observed verbatim from llama-3.3-70b and gpt-oss-120b at temperature 0.</p>
+          <p>Same transaction, two executions. The payloads differ only in a free-text `reason` field the model rewrote: observed verbatim from llama-3.3-70b and gpt-oss-120b at temperature 0.</p>
           <p class="ev"><code>0x2bmaswm8hvyf64myn9r</code> <code>i41oy3em8vm436g7kfdw4</code></p></article><article class="med">
           <h3><span class="s med">MEDIUM</span> <code>omitted_key</code></h3>
           <p class="claim">Claim tested: Retrying an identical transfer without a key is safe by default</p>
           <p>Two identical transfers, two executions. Duplicate protection is opt-in: an agent that never sets idempotency_key has none, and nothing warns it.</p>
-          <p class="ev"><code>js2ax8f6h5uj8vdab8kz3</code> <code>thwp2oekezcngb1u2hhx1</code></p></article><article class="med">
+          <p class="ev"><code>6mr4nbq8k2oxsrljzx6f6</code> <code>f8ubnn8wry3ogk21ogw2p</code></p></article><article class="med">
           <h3><span class="s med">MEDIUM</span> <code>amount_formatting</code></h3>
           <p class="claim">Claim tested: Equivalent amount strings yield the same semantic key</p>
           <p>&#x27;0.001&#x27; and &#x27;0.0010&#x27; are the same transfer but hash differently, so even the semantic key double-spends unless amounts are normalized before hashing. A model re-emitting a number in another format is enough.</p>
           <p class="ev"><code>3asp0ypmgerj11vn39o7f</code> <code>59n6kaz5mzub429mzrqwz</code></p></article><article class="high">
           <h3><span class="s high">HIGH</span> <code>premise_staleness</code></h3>
           <p class="claim">Claim tested: The premise an agent decided on still holds when its tx is included</p>
-          <p>Decided at block 11392814 on the premise &#x27;block &lt;= 11392814&#x27;. Included at block 11392815, 1 block(s) later (14.1s). The premise was FALSE at inclusion and the transaction executed anyway. Simulation verifies feasibility, never justification, so this is invisible: the transaction succeeds and reports success.</p>
-          <p class="ev"><a href="https://sepolia.etherscan.io/tx/0x6dd3a8ff0f1d50946bef787ee2e9b07a9b384defea8c8b1b533702a42ddc0ada" target="_blank" rel="noopener">0x6dd3a8ff…dc0ada</a> <code>decided@11392814</code> <code>included@11392815</code></p></article><article class="high">
+          <p>Decided at block 11392909 on the premise &#x27;block &lt;= 11392909&#x27;. Included at block 11392910, 1 block(s) later (11.1s). The premise was FALSE at inclusion and the transaction executed anyway. Simulation verifies feasibility, never justification, so this is invisible: the transaction succeeds and reports success.</p>
+          <p class="ev"><a href="https://sepolia.etherscan.io/tx/0x78f0f00ff4e9ad0c36a71f29b6338aab9b58d5f59f4d66ea5cca777e346dfda8" target="_blank" rel="noopener">0x78f0f00f…6dfda8</a> <code>decided@11392909</code> <code>included@11392910</code></p></article><article class="high">
           <h3><span class="s high">HIGH</span> <code>conditional_staleness</code></h3>
           <p class="claim">Claim tested: A met condition guarantees the action runs while it still holds</p>
-          <p>Condition &#x27;block &lt;= 11392815&#x27; evaluated true at block 11392815; the action was included at block 11392817, 2 block(s) later, where it is false. KeeperHub&#x27;s own read-condition-act primitive carries the gap it exists to remove: the check and the action are not atomic, so the gate says &#x27;only act while true&#x27; and delivers &#x27;act if it was true a moment ago&#x27;. An agent that hand-rolls this at least knows it is racing.</p>
-          <p class="ev"><a href="https://sepolia.etherscan.io/tx/0x5e1a06c785685a49368ec23a39eaca8cd2b18a19a4c2264fe9da4faedec80a30" target="_blank" rel="noopener">0x5e1a06c7…c80a30</a> <code>checked@11392815</code> <code>executed@11392817</code></p></article><article class="high">
+          <p>Condition &#x27;block &lt;= 11392910&#x27; evaluated true at block 11392910; the action was included at block 11392911, 1 block(s) later, where it is false. KeeperHub&#x27;s own read-condition-act primitive carries the gap it exists to remove: the check and the action are not atomic, so the gate says &#x27;only act while true&#x27; and delivers &#x27;act if it was true a moment ago&#x27;. An agent that hand-rolls this at least knows it is racing.</p>
+          <p class="ev"><a href="https://sepolia.etherscan.io/tx/0xabe982c29e8207bd23b3eca7ea2e2c726169752bfe280e5445c57fcd2134f748" target="_blank" rel="noopener">0xabe982c2…34f748</a> <code>checked@11392910</code> <code>executed@11392911</code></p></article><article class="high">
           <h3><span class="s high">HIGH</span> <code>silent_noop_node</code></h3>
           <p class="claim">Claim tested: A workflow whose action node never runs does not report success</p>
-          <p>status=&#x27;success&#x27; but executionTrace=[&#x27;trigger-1&#x27;] -- the action node was skipped and the run still reported success, with error=None. The node was missing `actionType`; supplying it makes creation reject the workflow for a missing `abi`, so the *less* complete definition passes validation and silently does nothing, while the more complete one is caught. An agent sees a green run and an audit trail of success for an automation that never ran.</p>
+          <p>status=&#x27;success&#x27; but executionTrace=[&#x27;trigger-1&#x27;]: the action node was skipped and the run still reported success, with error=None. The node was missing `actionType`; supplying it makes creation reject the workflow for a missing `abi`, so the *less* complete definition passes validation and silently does nothing, while the more complete one is caught. An agent sees a green run and an audit trail of success for an automation that never ran.</p>
           <p class="ev"><code>trace=[&#x27;trigger-1&#x27;]</code> <code>status=success</code></p></article>
 
 <h2>What held up</h2>
@@ -145,6 +145,6 @@ Reverts report as failures with a reason. Unaffordable sends are refused before
 submission with no nonce consumed. Concurrent transfers all land, so a busy agent does
 not head-of-line block itself. This is a test suite, not a hit piece.</p>
 
-<footer>Built 2026-08-01 00:25 UTC from <code>chaos/last_run.json</code>.
+<footer>Built 2026-08-01 00:33 UTC from <code>chaos/last_run.json</code>.
 Transactions on Ethereum Sepolia. Gas sponsored by KeeperHub.</footer>
 </div></body></html>

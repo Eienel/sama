@@ -26,8 +26,8 @@ from kh_client import call_tool
 SEPOLIA = "11155111"
 BASE_SEPOLIA = "84532"
 
-# The fields that determine the onchain effect. Anything outside this set -- above
-# all model-authored prose -- must stay out of an idempotency key.
+# The fields that determine the onchain effect. Anything outside this set: above
+# all model-authored prose: must stay out of an idempotency key.
 SEMANTIC_FIELDS = ("action", "chain_id", "to_address", "amount", "token_address")
 
 
@@ -101,7 +101,7 @@ def prose_drift(w: str) -> Result:
         "PASS" if same else "FINDING",
         ("Deduplicated correctly." if same else
          "Same transaction, two executions. The payloads differ only in a free-text "
-         "`reason` field the model rewrote -- observed verbatim from llama-3.3-70b "
+         "`reason` field the model rewrote: observed verbatim from llama-3.3-70b "
          "and gpt-oss-120b at temperature 0."),
         [] if same else [a["executionId"], b["executionId"]],
         "-" if same else "HIGH",
@@ -125,7 +125,7 @@ def semantic_key_fix(w: str) -> Result:
         "Hashing only the semantic surface survives prose drift",
         "PASS" if same else "FINDING",
         "Both retries collapsed to one execution." if same else
-        "The proposed fix did not dedupe -- the recommendation is wrong.",
+        "The proposed fix did not dedupe: the recommendation is wrong.",
         [a["executionId"]] if same else [a["executionId"], b["executionId"]],
         "-" if same else "HIGH",
     )
@@ -205,7 +205,7 @@ def amount_formatting(w: str) -> Result:
 
 def cross_chain_key_scope(w: str) -> Result:
     """Is an idempotency key scoped per chain? If not, reusing one SUPPRESSES a
-    legitimate second transfer on another chain -- a silent lost payment, which is
+    legitimate second transfer on another chain: a silent lost payment, which is
     worse than a duplicate because nothing executes at all."""
     k = _key({"scenario": "scope", "nonce": time.time()})
     a = _transfer(w, "0.001", SEPOLIA, k)
@@ -230,7 +230,7 @@ def cross_chain_key_scope(w: str) -> Result:
         "Reusing a key on a different chain does not suppress the second transfer",
         "FINDING" if collided else "PASS",
         ("Two different chains, one execution: the key is global, so an agent reusing "
-         "a task id across chains silently loses a payment -- nothing executes and no "
+         "a task id across chains silently loses a payment: nothing executes and no "
          "error is raised." if collided else
          "Key is chain-scoped; the second transfer executed independently."),
         [a["executionId"], b["executionId"]],
@@ -268,7 +268,7 @@ def _block_now() -> int:
 def premise_staleness(w: str) -> Result:
     """Read-then-act, with a premise that provably expires.
 
-    The agent observes height N and acts on the premise "block <= N" -- true at the
+    The agent observes height N and acts on the premise "block <= N": true at the
     moment of decision. If the transaction is included at a height above N, the
     justification for it was false by the time it executed. Nothing anywhere in the
     pipeline notices: simulation checks that the transaction *can* run, never that
@@ -312,7 +312,7 @@ def conditional_staleness(w: str) -> Result:
     """The same staleness question, aimed at KeeperHub's own primitive.
 
     `execute_check_and_execute` reads a contract value, evaluates a condition, and
-    performs an action if it holds -- the read-then-act pattern, offered so agents do
+    performs an action if it holds: the read-then-act pattern, offered so agents do
     not hand-roll it. If the gate is evaluated at one block and the action lands at a
     later one, the guarantee it appears to offer ("only act while this is true") does
     not hold, and it fails in the same way as hand-rolled code while looking safer.
@@ -368,8 +368,8 @@ def revert_reporting(w: str) -> Result:
     """A reverting call must be reported as failed, with a reason.
 
     Reliability is only as good as its reporting. If a transaction that reverts is
-    reported as completed, every downstream guard an agent builds -- retries, alerts,
-    audit review -- is reading a lie.
+    reported as completed, every downstream guard an agent builds: retries, alerts,
+    audit review: is reading a lie.
 
     ERC20 transfer of a balance we do not have: reverts deterministically.
     """
@@ -410,7 +410,7 @@ def revert_reporting(w: str) -> Result:
 def overdraft_transfer(w: str) -> Result:
     """Sending more than the balance: clean rejection, or a stuck nonce?
 
-    A stuck transaction is the expensive failure -- it blocks every later transaction
+    A stuck transaction is the expensive failure: it blocks every later transaction
     from the same account by head-of-line ordering, so one bad send freezes the agent.
     """
     try:
@@ -445,7 +445,7 @@ def overdraft_transfer(w: str) -> Result:
 def silent_noop_node(w: str) -> Result:
     """A workflow whose action node never runs must not report success.
 
-    For a reliability layer the worst outcome is not an error -- it is "your
+    For a reliability layer the worst outcome is not an error: it is "your
     automation ran fine" while nothing happened. An agent polling status sees
     success, the audit trail records success, and no alert fires.
     """
@@ -493,7 +493,7 @@ def silent_noop_node(w: str) -> Result:
         "silent_noop_node",
         "A workflow whose action node never runs does not report success",
         "FINDING" if lied else "PASS",
-        (f"status={status!r} but executionTrace={trace} -- the action node was "
+        (f"status={status!r} but executionTrace={trace}: the action node was "
          "skipped and the run still reported success, with error=None. The node was "
          "missing `actionType`; supplying it makes creation reject the workflow for a "
          "missing `abi`, so the *less* complete definition passes validation and "
@@ -510,7 +510,7 @@ def parallel_distinct_transfers(w: str, n=5) -> Result:
     """Nonce management under concurrent load.
 
     Transactions from one account are processed in strict nonce order, so a single
-    stuck transaction blocks every later one from that wallet -- head-of-line
+    stuck transaction blocks every later one from that wallet: head-of-line
     blocking, the documented way a busy agent freezes itself. Fire several genuinely
     distinct transfers at once and check they all land.
     """
@@ -545,7 +545,7 @@ def parallel_distinct_transfers(w: str, n=5) -> Result:
          if stuck else
          f"All {n} concurrent transfers completed. Nonces are allocated and submitted "
          "correctly under parallel load, so a busy agent does not head-of-line block "
-         "itself -- the failure mode that freezes naive senders."),
+         "itself: the failure mode that freezes naive senders."),
         landed[:3],
         "HIGH" if stuck else "-",
     )
