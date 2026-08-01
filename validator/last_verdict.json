@@ -1,6 +1,6 @@
 {
   "score": 38,
-  "scored_at": "2026-08-01T00:46:06Z",
+  "scored_at": "2026-08-01T06:30:17Z",
   "subject": "KeeperHub execution layer",
   "method": "chaos harness, live transactions on Ethereum Sepolia",
   "scoring": "share of tested guarantees that held; HIGH findings weighted double",
@@ -36,8 +36,8 @@
       "severity": "MEDIUM",
       "claim": "Retrying an identical transfer without a key is safe by default",
       "evidence": [
-        "6mr4nbq8k2oxsrljzx6f6",
-        "f8ubnn8wry3ogk21ogw2p"
+        "a3povzsfdpp7wzaqfisas",
+        "3y62dls3yo87womf36cbm"
       ]
     },
     {
@@ -46,7 +46,7 @@
       "severity": "-",
       "claim": "Simultaneous retries with one key produce exactly one execution",
       "evidence": [
-        "6ngha1e1gxku6q7w8wx1q"
+        "7jehqbil0ydsantlmwm8q"
       ]
     },
     {
@@ -65,7 +65,7 @@
       "severity": "-",
       "claim": "Reusing a key with a different payload is caught, not silently applied",
       "evidence": [
-        "wkwdsnylc5so6bylyr4bs"
+        "wxugnc5lhu23ns7g73ryy"
       ]
     },
     {
@@ -74,9 +74,9 @@
       "severity": "HIGH",
       "claim": "The premise an agent decided on still holds when its tx is included",
       "evidence": [
-        "0x78f0f00ff4e9ad0c36a71f29b6338aab9b58d5f59f4d66ea5cca777e346dfda8",
-        "decided@11392909",
-        "included@11392910"
+        "0xf7e2c26c3c44055f1e2ff050013c30d160b9be110ff17b2e6d3c91b9a8ba48dd",
+        "decided@11394643",
+        "included@11394644"
       ]
     },
     {
@@ -85,9 +85,9 @@
       "severity": "HIGH",
       "claim": "A met condition guarantees the action runs while it still holds",
       "evidence": [
-        "0xabe982c29e8207bd23b3eca7ea2e2c726169752bfe280e5445c57fcd2134f748",
-        "checked@11392910",
-        "executed@11392911"
+        "0xefec90f9ab936aa83afe5ea8272bd26067f80548c2f87929b57bb3091e32a38e",
+        "checked@11394644",
+        "executed@11394645"
       ]
     },
     {
@@ -96,7 +96,7 @@
       "severity": "-",
       "claim": "A call that will revert is reported as failed, not completed",
       "evidence": [
-        "9xhf99jtsvndz96i94bga"
+        "bqozqltcaol1epx3lpl5i"
       ]
     },
     {
@@ -105,7 +105,7 @@
       "severity": "-",
       "claim": "An unaffordable transfer is rejected cleanly, not left pending",
       "evidence": [
-        "5w1njgica0clqynxgmtcy"
+        "e541aj8xjall8ovczde4r"
       ]
     },
     {
@@ -124,9 +124,9 @@
       "severity": "-",
       "claim": "Concurrent distinct transfers all land; none blocks the others",
       "evidence": [
-        "1p34yy6huq3fzizp3569m",
-        "fl7c9lsrmilj6glhw6ynq",
-        "iq9wi1g7lzpyzxtbs8oos"
+        "5u28a4r2e5b4jh0sxqd6b",
+        "836fclxbgztt4kbyacdy9",
+        "8oocujpbiwk03kw0ltxuz"
       ]
     }
   ]
