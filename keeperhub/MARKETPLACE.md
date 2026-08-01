@@ -23,8 +23,36 @@ evaluates its gate at one block and lands the action at a later one.
 ```
 workflowId  6ke4mwpf39d9wn5elnxnj
 slug        premise-freshness-check
-type        read      chain 11155111 (Sepolia)      category monitoring
+type        read     chain 8453 (Base mainnet)     category monitoring
+price       0.01 USDC per call, settled via x402
 ```
+
+It runs on Base mainnet rather than a testnet. It is read-only, so mainnet costs no
+gas, and pricing it in real USDC makes it a genuine paid endpoint rather than a
+demonstration.
+
+## It is a live x402 endpoint
+
+Calling it without payment returns a complete x402 challenge:
+
+```json
+{"x402Version":2,
+ "resource":{"url":".../workflows/premise-freshness-check/call"},
+ "accepts":[{"scheme":"exact","network":"eip155:8453",
+             "asset":"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+             "amount":"10000","payTo":"0x22ec...d950","maxTimeoutSeconds":300}],
+ "extensions":{"bazaar":{"discoverable":true,"category":"monitoring"}}}
+```
+
+10000 atomic units of USDC on Base is 0.01 USDC. `payTo` is our wallet, so a paying
+agent settles directly to us onchain.
+
+Note the setting order: `priceUsdcPerCall` is only accepted while the workflow is
+unlisted, so pricing an existing listing means unlist, price, relist.
+
+**Honest limit:** we are the seller side. Paying our own endpoint end to end needs real
+USDC in the agentic wallet on Base, which we have not funded, so the buyer half is
+unexercised.
 
 Called the way an external agent would:
 
