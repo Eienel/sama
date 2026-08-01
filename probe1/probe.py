@@ -1,5 +1,5 @@
 """
-Probe 1 — Does content-addressed idempotency survive an LLM agent's context loss?
+Probe 1: Does content-addressed idempotency survive an LLM agent's context loss?
 
 THE CLAIM UNDER TEST
 --------------------
@@ -20,19 +20,19 @@ it costs half a day instead of two weeks.
 
 THE TWO ARMS
 ------------
-  A. cold_restart  — identical prompt, fresh context, N times.
+  A. cold_restart : identical prompt, fresh context, N times.
                      Tests raw sampling nondeterminism. The weak arm.
-  B. log_replay    — the Lobstar Wilde case: the agent's context is gone, so it
+  B. log_replay   : the Lobstar Wilde case: the agent's context is gone, so it
                      reconstructs its intent from a log summary rather than the
                      original instruction. Same meaning, different words in.
                      The realistic arm, and where divergence is expected.
 
 THREE COMPARISON LEVELS
 -----------------------
-  exact      — raw bytes. Naive hashing.
-  canonical  — sorted keys, normalized whitespace/number formatting.
+  exact     : raw bytes. Naive hashing.
+  canonical : sorted keys, normalized whitespace/number formatting.
                This is what a *competently* implemented content-hash key uses.
-  semantic   — only the fields that determine what happens onchain.
+  semantic  : only the fields that determine what happens onchain.
 
 The finding that matters is the gap between `canonical` and `semantic`.
 canonical < semantic means: the action was the same, the key was not, dedupe failed.
@@ -359,7 +359,7 @@ def run_arm(generate, sc: Scenario, arm: str, n: int) -> ArmResult:
 
 def report(results: list[ArmResult]) -> int:
     print("\n" + "=" * 74)
-    print("PROBE 1 — content-addressed idempotency under LLM context loss")
+    print("PROBE 1: content-addressed idempotency under LLM context loss")
     print("=" * 74)
     print("\nMatch rate = share of retries a hash-based dedupe would collapse.")
     print("Lower is worse. The number that matters is canonical vs semantic.\n")
@@ -390,7 +390,7 @@ def report(results: list[ArmResult]) -> int:
     # while being an artifact of whichever trials happened to parse.
     scored = len(results) - len(unreliable)
     if scored < max(3, len(results) // 2):
-        print("RESULT: INCONCLUSIVE — not enough clean data to decide.\n")
+        print("RESULT: INCONCLUSIVE: not enough clean data to decide.\n")
         print(f"Only {scored} of {len(results)} arms had enough parseable responses")
         print("to score. This is a harness problem, not a finding: fix the errors")
         print("below and re-run. Do NOT read this as a kill OR a confirmation.")
@@ -408,7 +408,7 @@ def report(results: list[ArmResult]) -> int:
         print(f"NOTE: {len(unreliable)} arm(s) excluded for insufficient clean trials.\n")
 
     if leaks:
-        print("RESULT: MECHANISM CONFIRMED — idea #2 survives.\n")
+        print("RESULT: MECHANISM CONFIRMED: idea #2 survives.\n")
         print("In these cases the agent regenerated the SAME onchain action with a")
         print("DIFFERENT canonical payload. A content-hash idempotency key would have")
         print("missed, dedupe would not have fired, and the transaction would have")
@@ -419,7 +419,7 @@ def report(results: list[ArmResult]) -> int:
         print("\nThis is the gap Stripe-style idempotency cannot see.")
         print("Next: keep the semantic key, drop prose from the hashed surface.")
     else:
-        print("RESULT: NOT CONFIRMED — idea #2 is dead, and that is worth knowing.\n")
+        print("RESULT: NOT CONFIRMED: idea #2 is dead, and that is worth knowing.\n")
         print("Canonical payloads were as stable as semantic ones. A well-implemented")
         print("content-hash key is sufficient; there is no gap to sell. Fall back to")
         print("idea #1 (premise invariants), which survived interrogation independently.")

@@ -1,4 +1,4 @@
-# Probe 1 — Does content-addressed idempotency survive LLM context loss?
+# Probe 1: Does content-addressed idempotency survive LLM context loss?
 
 A half-day scouting probe. It exists to **kill an idea cheaply**, not to validate one.
 
@@ -6,7 +6,7 @@ A half-day scouting probe. It exists to **kill an idea cheaply**, not to validat
 
 Stripe-style idempotency assumes a **deterministic client**: you retry with a
 byte-identical body, the server hashes it, the duplicate is suppressed. Coinbase's
-CLI docs give agents the same advice — use idempotent order IDs so retries don't
+CLI docs give agents the same advice: use idempotent order IDs so retries don't
 duplicate.
 
 LLM agents are not deterministic clients.
@@ -26,7 +26,7 @@ stranger.
 ## What kills the idea
 
 If regenerated payloads come out canonically identical every time, hashing works,
-Stripe's model is sufficient, and there is nothing here. **That is a good outcome** —
+Stripe's model is sufficient, and there is nothing here. **That is a good outcome** -
 it costs half a day instead of two weeks. The probe is built to reach that verdict
 honestly; it reports `NOT CONFIRMED` when payloads agree.
 
@@ -36,21 +36,21 @@ honestly; it reports `NOT CONFIRMED` when payloads agree.
 
 | arm | what it does | why |
 |---|---|---|
-| `cold_restart` | identical prompt, fresh context, N times | raw sampling nondeterminism — the weak arm |
+| `cold_restart` | identical prompt, fresh context, N times | raw sampling nondeterminism: the weak arm |
 | `log_replay` | agent rebuilds intent from a **log summary** instead of the original instruction | the Lobstar case. Same meaning, different words in. The realistic arm |
 
 **Three comparison levels:**
 
-- `exact` — raw bytes. Naive hashing.
-- `canonical` — sorted keys, normalized whitespace, case-folded identifiers, numeric
+- `exact`: raw bytes. Naive hashing.
+- `canonical`: sorted keys, normalized whitespace, case-folded identifiers, numeric
   normalization so `90` and `90.0` agree. This is what a *competent* content-hash
   implementation uses. Deliberately generous: the point is to beat the strongest
   reasonable implementation, not a strawman.
-- `semantic` — only the fields that determine the onchain effect
+- `semantic`: only the fields that determine the onchain effect
   (`action`, `chain`, `token`, `to`, `amount`). `reason` is excluded by design.
 
 **The finding that matters is the gap between `canonical` and `semantic`.**
-`canonical < semantic` means the action was the same but the key was not — dedupe
+`canonical < semantic` means the action was the same but the key was not: dedupe
 failed, and the transaction would have gone out twice.
 
 Each trial is a fresh conversation with no shared history. That *is* the context wipe.
@@ -81,13 +81,13 @@ export ANTHROPIC_API_KEY=sk-ant-...
 python3 probe1/probe.py --provider anthropic
 ```
 
-A gap that shows up on Gemini *and* Claude is structural — a property of LLM
+A gap that shows up on Gemini *and* Claude is structural: a property of LLM
 regeneration itself. A gap on only one vendor is a sampler quirk and much weaker
 evidence. Cross-vendor agreement is the version of this result worth putting in a
 pitch.
 
 Run at `--temperature 1.0` first (the realistic agent default), then `0.0`. If the gap
-persists at temperature 0, the mechanism isn't a sampling artifact either — that's the
+persists at temperature 0, the mechanism isn't a sampling artifact either: that's the
 strong result.
 
 ## Reading the output

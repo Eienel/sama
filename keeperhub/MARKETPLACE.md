@@ -38,13 +38,13 @@ call_workflow {"slug":"premise-freshness-check","inputs":{}}
 20 listings, priced $0.01-$0.05 per call (ours is currently free). Several are directly
 adjacent to this project's findings:
 
-- **`assay-verify`** — "given an intent hash, reports whether the agent committed to
+- **`assay-verify`**: "given an intent hash, reports whether the agent committed to
   that action onchain BEFORE it executed". This is intent-commitment verification, very
   close to the premise-invariants direction. Someone else reached a neighbouring idea.
-- **`checked-transfer-*`** (three listings) — "checks your source wallet balance and
+- **`checked-transfer-*`** (three listings): "checks your source wallet balance and
   sends a transfer only if the balance exceeds a threshold". This is exactly the
   read-then-act pattern that `conditional_staleness` shows is not atomic.
-- **`position-health-check`** — reads a lending position's health factor and danger band.
+- **`position-health-check`**: reads a lending position's health factor and danger band.
 
 ## What listing taught us
 
@@ -56,7 +56,7 @@ the node shape by reading a public template (`get_template`) and copying it.
 
 > **Fix:** document the node/edge shape, or ship one worked `create_workflow` example.
 
-**A node missing `actionType` is accepted and silently skipped** — see the
+**A node missing `actionType` is accepted and silently skipped**: see the
 `silent_noop_node` finding in `../chaos/README.md`. Worse, the *more* complete
 definition is the one that gets rejected: adding `actionType` triggers validation that
 demands an `abi`, while omitting it passes and does nothing.
@@ -75,5 +75,5 @@ an **ERC-8004 ReputationRegistry**, signed by the caller's wallet and submitted 
 
 That is an onchain reputation surface for agent-to-agent workflow calls, and it is
 currently attached to a marketplace with one listing. It is the natural place for the
-reliability evidence this harness produces to land — scores backed by executed
+reliability evidence this harness produces to land: scores backed by executed
 transactions rather than self-reported claims.

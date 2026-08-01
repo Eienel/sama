@@ -15,7 +15,7 @@ idempotency_key   string   Optional Idempotency-Key (e.g. an agent-side transact
 Two properties matter, and they compound:
 
 1. **Optional.** Omit it and there is no duplicate protection at all.
-2. **Agent-supplied.** KeeperHub cannot compute it — correctness depends entirely on
+2. **Agent-supplied.** KeeperHub cannot compute it: correctness depends entirely on
    how the calling agent derives it.
 
 The obvious derivation, and the one an agent will reach for, is to hash the payload.
@@ -38,7 +38,7 @@ Nothing below is a bug in KeeperHub.
 
 ## The failure: a key derived from a regenerated payload
 
-Two payloads in the shape Probe 1 actually produced at temperature 0 — same
+Two payloads in the shape Probe 1 actually produced at temperature 0: same
 transaction, only the free-text `reason` differing:
 
 ```python
@@ -67,7 +67,7 @@ The dedupe simply never fired, because the two calls never looked like the same 
 
 ## Why this is not a strawman
 
-- The `reason` field drift is not invented — it is the exact output observed from
+- The `reason` field drift is not invented: it is the exact output observed from
   `llama-3.3-70b` and `gpt-oss-120b` at **temperature 0**, where nondeterminism is
   supposed to be off (see `probe1/RESULTS.md`).
 - Hashing the request body is the textbook derivation. It is what Stripe's model
@@ -79,8 +79,8 @@ The dedupe simply never fired, because the two calls never looked like the same 
 
 ## The fix
 
-Derive the key from the **semantic surface only** — the fields that determine the
-onchain effect — and keep model-authored prose out of it:
+Derive the key from the **semantic surface only**: the fields that determine the
+onchain effect: and keep model-authored prose out of it:
 
 ```python
 SEMANTIC = ("action", "chain_id", "to_address", "amount", "token_address")
@@ -94,7 +94,7 @@ Two things this does **not** fix, and which need separate mechanisms:
 
 1. **A genuinely changed action.** Probe 1 also observed the agent choosing
    `transfer` where it previously chose `contract_call`. The semantics really did
-   change, so a semantic key correctly treats them as different — and you double-spend
+   change, so a semantic key correctly treats them as different: and you double-spend
    anyway. That needs premise re-checking at submission, not idempotency.
 2. **Agents that omit the key entirely.** It is optional, and nothing warns you.
 

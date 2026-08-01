@@ -2,7 +2,7 @@
 
 Deliberately breaks agent execution through KeeperHub and reports what survives.
 
-KeeperHub's pitch is reliability. Nothing currently lets you *check* that claim — the
+KeeperHub's pitch is reliability. Nothing currently lets you *check* that claim: the
 audit trail records every trigger, simulation, transaction and outcome, and nobody
 reads it back. This runs the failure modes that are documented in the wild against
 live infrastructure and publishes a scoreboard.
@@ -26,7 +26,7 @@ revert_reporting        PASS      -       a reverting call is reported as failed
 overdraft_transfer      PASS      -       unaffordable transfer rejected, no stuck nonce
 ```
 
-**5 findings / 10 scenarios** — three HIGH, and they are *different mechanisms*:
+**5 findings / 10 scenarios**: three HIGH, and they are *different mechanisms*:
 `prose_drift` is the agent forgetting its exact words, `premise_staleness` is the world
 moving underneath hand-rolled code, and `conditional_staleness` is the world moving
 underneath KeeperHub's own guard. No one fix addresses the others.
@@ -47,29 +47,29 @@ Worth stating first, because two of these were scenarios written expecting a fai
   `status='failed'` with the revert reason attached, rather than the far more
   dangerous "completed with no effect".
 - **Unaffordable sends are refused before submission**, with an actionable message
-  (`Insufficient ETH balance. Have: 0.05, Need: 1000000.0`) and no nonce consumed — so
+  (`Insufficient ETH balance. Have: 0.05, Need: 1000000.0`) and no nonce consumed: so
   a bad send cannot head-of-line block every later transaction from the wallet.
 
 ## The findings
 
-### HIGH — `prose_drift`
+### HIGH: `prose_drift`
 
 Hashing the request body is the textbook idempotency-key derivation. When the caller
 is an LLM, the body contains model-authored prose, and that prose is not stable across
 a context loss. Two payloads differing only in a `reason` field produced two keys, two
 executions, and two transactions onchain for one intended payment.
 
-The prose variants are not invented — they are verbatim output from `llama-3.3-70b`
+The prose variants are not invented: they are verbatim output from `llama-3.3-70b`
 and `gpt-oss-120b` at **temperature 0** (see `../probe1/RESULTS.md`). Evidence and
 transaction hashes: `../keeperhub/DOUBLE_SPEND.md`.
 
-### MEDIUM — `omitted_key`
+### MEDIUM: `omitted_key`
 
 `idempotency_key` is optional. Two identical transfers with no key produce two
 executions. Duplicate protection is opt-in and nothing warns an agent that it is
-running without it — so the default path is the unsafe one.
+running without it: so the default path is the unsafe one.
 
-### MEDIUM — `amount_formatting`
+### MEDIUM: `amount_formatting`
 
 **This is a finding against our own proposed fix, not against KeeperHub.** `"0.001"`
 and `"0.0010"` are the same transfer, but hashing the semantic fields *as raw strings*
@@ -78,15 +78,15 @@ sufficient: values must be normalized (numbers parsed, addresses case-folded) be
 hashing. A model re-emitting a number in another format is enough to defeat a
 half-implemented fix.
 
-### HIGH — `premise_staleness`
+### HIGH: `premise_staleness`
 
 The agent reads chain height through KeeperHub, observes block N, and acts on the
-premise `block <= N` — true at the moment of decision. The transaction is then
+premise `block <= N`: true at the moment of decision. The transaction is then
 included at a later height, where that premise is false.
 
 ```
 decided  block 11392636   premise "block <= 11392636" holds
-included block 11392637   premise FALSE — transaction executed anyway
+included block 11392637   premise FALSE: transaction executed anyway
 tx 0x25ff5005192e91466df19706fa2e47ee9f25192d0da6d628e1ce79614b282dc5
 ```
 
@@ -94,14 +94,14 @@ Nothing anywhere notices. Simulation verifies the transaction *can* run, never t
 the reason for running it still holds, so the transaction succeeds and reports
 success while its justification has evaporated.
 
-**This is the failure a semantic idempotency key provably cannot catch** — the intent
+**This is the failure a semantic idempotency key provably cannot catch**: the intent
 was never duplicated, it was stale. Different mechanism, different fix: re-check the
 premise at submission and abort rather than execute.
 
 Block height is a deliberately unarguable premise (it always advances). Real premises
-— a health factor, a price, an allowance — expire the same way and less predictably.
+- a health factor, a price, an allowance: expire the same way and less predictably.
 
-### HIGH — `conditional_staleness`
+### HIGH: `conditional_staleness`
 
 The obvious objection to the finding above is "don't hand-roll read-then-act, use the
 primitive." So we aimed the same test at `execute_check_and_execute`, which reads a
@@ -109,7 +109,7 @@ value, evaluates a condition, and performs an action if it holds.
 
 ```
 condition "block <= 11392654"  evaluated TRUE at block 11392654
-action                          included at block 11392655 — condition FALSE
+action                          included at block 11392655: condition FALSE
 tx 0x058bddf6da9ef46956e3cc408c048bb228fbe3d9e1fae3817a8cee75a43f7f49
 ```
 
@@ -122,7 +122,7 @@ This is worse than the hand-rolled case rather than equivalent: an agent that wr
 its own read-then-act at least knows it is racing. An agent handed a conditional
 primitive reasonably assumes the condition is enforced at execution.
 
-The fix is not to remove the tool — it is to re-check the condition at submission and
+The fix is not to remove the tool: it is to re-check the condition at submission and
 abort if it no longer holds, which is exactly what "premise invariants" means.
 
 ## Running
@@ -149,5 +149,5 @@ Two rules, both learned from getting them wrong:
 1. **It must be able to come back clean.** A scenario that can only find problems is a
    demo, not a test. Five of ten currently pass, and four of those were written
    expecting a failure.
-2. **Every FINDING carries verifiable evidence** — execution ids or transaction
+2. **Every FINDING carries verifiable evidence**: execution ids or transaction
    hashes a third party can check.

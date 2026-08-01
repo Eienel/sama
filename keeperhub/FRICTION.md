@@ -5,7 +5,7 @@ remote container with no browser. Written for the onboarding-UX bounty: every it
 something that cost real time, with the fix that would have saved it.
 
 Context: the environment is a cloud container. No browser, no GUI, no localhost the
-user can reach. This is not an exotic setup — it is where autonomous agents actually
+user can reach. This is not an exotic setup: it is where autonomous agents actually
 run (CI, servers, sandboxes).
 
 ## 1. Onboarding dead-ends at step 3/3 for anyone without a local browser
@@ -24,7 +24,7 @@ The official Claude plugin (`KeeperHub/claude-plugins`) is the same story:
 `/keeperhub:login` is documented as OAuth-browser-only, with no `KEEPERHUB_API_KEY`
 support.
 
-**A headless path does exist** — an organisation API key passed as a bearer token,
+**A headless path does exist**: an organisation API key passed as a bearer token,
 documented under `ai-tools/mcp-server`. It works perfectly. It is simply absent from
 onboarding and from the plugin, which are the two places a new user actually looks.
 
@@ -43,7 +43,7 @@ wizard, that page is hard to reach, and every guessable URL 404s:
 ```
 
 The only `/settings/*` route in the client bundle is `/settings/mcp/reauthorize`. The
-backing endpoint `/api/api-keys` returns **401** (not 404), so the feature is live —
+backing endpoint `/api/api-keys` returns **401** (not 404), so the feature is live -
 its UI just isn't linkable. `https://app.keeperhub.com/workflows` (200) is the usable
 way past the wizard.
 
@@ -57,7 +57,7 @@ A bare `urllib` request with a valid API key returns **403 Forbidden**, no body:
 urllib.error.HTTPError: HTTP Error 403: Forbidden
 ```
 
-The key is fine. The `User-Agent` is the problem — reproducible with
+The key is fine. The `User-Agent` is the problem: reproducible with
 `curl -A "Python-urllib/3.11"`, which also 403s, while the same request with curl's
 default agent succeeds. Any conventional UA string passes.
 
@@ -72,7 +72,7 @@ and sends you back to re-issue credentials that were never wrong.
 After `initialize`, every subsequent call must carry the `Mcp-Session-Id` returned in
 the initialize **response header**. Omit it and you get a bare `400 Bad Request` with
 no explanation. Standard MCP, but invisible if you're driving the endpoint directly
-rather than through an SDK — which is exactly what the headless path forces you to do.
+rather than through an SDK: which is exactly what the headless path forces you to do.
 
 > **Fix:** one curl example in the API-key docs showing the two-step handshake.
 
@@ -86,7 +86,7 @@ docs and workflow JSON use camelCase, so the first attempt reliably fails.
 
 - The API key worked instantly once obtained, with `mcp:read mcp:write mcp:admin`.
 - **ABI auto-fetch is excellent.** A read call against verified USDC on Base needed
-  only address, chain and function name — no ABI:
+  only address, chain and function name: no ABI:
 
   ```
   execute_contract_call {"chain_id":"8453",
@@ -96,7 +96,7 @@ docs and workflow JSON use camelCase, so the first attempt reliably fails.
   ```
 
 - `list_action_schemas` returns the full chain catalogue with testnet flags and
-  explorer URLs in one call — genuinely well designed.
+  explorer URLs in one call: genuinely well designed.
 - 35 tools, clearly named and described.
 
 ## Cumulative cost
