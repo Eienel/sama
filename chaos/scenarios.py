@@ -506,6 +506,51 @@ def silent_noop_node(w: str) -> Result:
     )
 
 
+def parallel_distinct_transfers(w: str, n=5) -> Result:
+    """Nonce management under concurrent load.
+
+    Transactions from one account are processed in strict nonce order, so a single
+    stuck transaction blocks every later one from that wallet -- head-of-line
+    blocking, the documented way a busy agent freezes itself. Fire several genuinely
+    distinct transfers at once and check they all land.
+    """
+    def one(i):
+        try:
+            r = _transfer(w, "0.001", SEPOLIA, _key({"s": "par", "i": i, "n": time.time()}))
+            return ("ok", r["executionId"])
+        except Conflict as c:
+            return ("409", c.kind)
+        except RuntimeError as e:
+            return ("err", str(e)[:70])
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=n) as ex:
+        outs = [f.result() for f in [ex.submit(one, i) for i in range(n)]]
+
+    ok = [e for k, e in outs if k == "ok"]
+    bad = [(k, e) for k, e in outs if k != "ok"]
+
+    landed, pending = [], []
+    for eid in ok:
+        d = json.loads(call_tool("get_direct_execution_status", {"execution_id": eid}))
+        (landed if d.get("status") == "completed" else pending).append(eid)
+
+    stuck = bool(pending) or bool(bad)
+    return Result(
+        "parallel_distinct_transfers",
+        "Concurrent distinct transfers all land; none blocks the others",
+        "FINDING" if stuck else "PASS",
+        (f"{n} concurrent transfers -> {len(landed)} completed, {len(pending)} still "
+         f"pending, {len(bad)} rejected {bad[:2]}. Under nonce ordering a transaction "
+         "that does not land blocks every later one from this wallet."
+         if stuck else
+         f"All {n} concurrent transfers completed. Nonces are allocated and submitted "
+         "correctly under parallel load, so a busy agent does not head-of-line block "
+         "itself -- the failure mode that freezes naive senders."),
+        landed[:3],
+        "HIGH" if stuck else "-",
+    )
+
+
 SCENARIOS = [
     prose_drift,
     semantic_key_fix,
@@ -518,4 +563,5 @@ SCENARIOS = [
     revert_reporting,
     overdraft_transfer,
     silent_noop_node,
+    parallel_distinct_transfers,
 ]
