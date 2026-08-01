@@ -129,9 +129,26 @@ class Auditor:
                 # things it never observed is worth nothing, so every claim is
                 # checked against what actually ran before the report is accepted.
                 print(f"    report REJECTED: {len(problems)} problem(s)", flush=True)
-                return json.dumps({"accepted": False, "problems": problems,
-                                   "instruction": "Fix these and call submit_report again. "
-                                   "Only cite evidence returned by a probe you ran."})
+                # Hand back exactly what a valid report looks like from what has
+                # already run. Without this the model re-runs probes to "get more
+                # evidence" and burns its budget, when the evidence was never the
+                # problem: the citations were.
+                template = {
+                    "summary": "<one paragraph on what held and what did not>",
+                    "findings": [
+                        {"probe": r.name, "severity": r.severity, "claim": r.claim,
+                         "evidence": ", ".join(str(e) for e in r.evidence),
+                         "verified": bool(self.verified.get(r.name))}
+                        for r in self.log if r.verdict == "FINDING"],
+                    "passes": [r.name for r in self.log if r.verdict == "PASS"],
+                }
+                return json.dumps({
+                    "accepted": False, "problems": problems,
+                    "instruction": "Do NOT run more probes. The evidence is not the "
+                                   "problem, your citations are. Call submit_report "
+                                   "again using valid_report below, replacing only "
+                                   "summary and claim with your own wording.",
+                    "valid_report": template})
             self.report = args
             return json.dumps({"accepted": True})
         return json.dumps({"error": "unknown tool"})

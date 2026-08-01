@@ -2,24 +2,24 @@
   "report": {
     "findings": [
       {
-        "claim": "Idempotency guarantee",
-        "evidence": "trace=['trigger-1']",
+        "claim": "A workflow whose action node never runs does not report success",
+        "evidence": "trace=['trigger-1'], status=success",
         "probe": "silent_noop_node",
-        "severity": "high",
+        "severity": "HIGH",
         "verified": false
       }
     ],
     "passes": [
       "revert_reporting"
     ],
-    "summary": "Audit results of KeeperHub's execution guarantees"
+    "summary": "KeeperHub's execution guarantees hold for revert reporting but may have issues with idempotency"
   },
   "probes": [
     {
       "name": "silent_noop_node",
       "claim": "A workflow whose action node never runs does not report success",
       "verdict": "FINDING",
-      "detail": "status='success' but executionTrace=['trigger-1'] -- the action node was skipped and the run still reported success, with error=None. The node was missing `actionType`; supplying it makes creation reject the workflow for a missing `abi`, so the *less* complete definition passes validation and silently does nothing, while the more complete one is caught. An agent sees a green run and an audit trail of success for an automation that never ran.",
+      "detail": "status='success' but executionTrace=['trigger-1']: the action node was skipped and the run still reported success, with error=None. The node was missing `actionType`; supplying it makes creation reject the workflow for a missing `abi`, so the *less* complete definition passes validation and silently does nothing, while the more complete one is caught. An agent sees a green run and an audit trail of success for an automation that never ran.",
       "evidence": [
         "trace=['trigger-1']",
         "status=success"
@@ -32,49 +32,7 @@
       "verdict": "PASS",
       "detail": "Reported status='failed', error='Contract call failed: execution reverted (no data present; likely require(false)'. The failure surfaces.",
       "evidence": [
-        "i2drb27l3hfctqlfnbvkp"
-      ],
-      "severity": "-"
-    },
-    {
-      "name": "silent_noop_node",
-      "claim": "A workflow whose action node never runs does not report success",
-      "verdict": "FINDING",
-      "detail": "status='success' but executionTrace=['trigger-1'] -- the action node was skipped and the run still reported success, with error=None. The node was missing `actionType`; supplying it makes creation reject the workflow for a missing `abi`, so the *less* complete definition passes validation and silently does nothing, while the more complete one is caught. An agent sees a green run and an audit trail of success for an automation that never ran.",
-      "evidence": [
-        "trace=['trigger-1']",
-        "status=success"
-      ],
-      "severity": "HIGH"
-    },
-    {
-      "name": "revert_reporting",
-      "claim": "A call that will revert is reported as failed, not completed",
-      "verdict": "PASS",
-      "detail": "Reported status='failed', error='Contract call failed: missing revert data (action=\"call\", data=null, reason=null'. The failure surfaces.",
-      "evidence": [
-        "8741y4d6sz52vxq1ijcbl"
-      ],
-      "severity": "-"
-    },
-    {
-      "name": "silent_noop_node",
-      "claim": "A workflow whose action node never runs does not report success",
-      "verdict": "FINDING",
-      "detail": "status='success' but executionTrace=['trigger-1'] -- the action node was skipped and the run still reported success, with error=None. The node was missing `actionType`; supplying it makes creation reject the workflow for a missing `abi`, so the *less* complete definition passes validation and silently does nothing, while the more complete one is caught. An agent sees a green run and an audit trail of success for an automation that never ran.",
-      "evidence": [
-        "trace=['trigger-1']",
-        "status=success"
-      ],
-      "severity": "HIGH"
-    },
-    {
-      "name": "revert_reporting",
-      "claim": "A call that will revert is reported as failed, not completed",
-      "verdict": "PASS",
-      "detail": "Reported status='failed', error='Contract call failed: missing revert data (action=\"call\", data=null, reason=null'. The failure surfaces.",
-      "evidence": [
-        "71he44rkzp21r4ym8yg3j"
+        "31k6s8uip6xru1orwnp2d"
       ],
       "severity": "-"
     }
