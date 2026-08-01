@@ -15,7 +15,7 @@ published the verdict onchain to the ERC-8004 registry they left empty.
 |---|---|
 | Source code | `https://github.com/eienel/sama` (branch `claude/relaxed-ride-a9py6j`) |
 | Demo video | see script below, not yet recorded |
-| Transaction executed by the agent | [`0x2241db71…2401e4`](https://sepolia.etherscan.io/tx/0x2241db718b260ae0d7850060ce77f39275e7dfc5c55b6f5a3c7e59a1d42401e4) (ERC-8004 `validationResponse`) |
+| Transaction executed by the agent | [`0x9378fa1b…5a4e75`](https://sepolia.etherscan.io/tx/0x9378fa1bcc730bf664a07617d06c91dd54a9f873676b4c6a3f4b4317415a4e75) (ERC-8004 `validationResponse`) |
 | Agent framework | custom, model served via Groq (`llama-3.3-70b-versatile`) |
 | Used KeeperHub before | no |
 
@@ -61,16 +61,24 @@ picking probes, then real transactions landing. Point out one rejected report: t
 agent tried to cite evidence it had not observed and the harness refused it. Say: an
 auditor that can assert what it did not check is worthless.
 
-**1:00 to 2:00, the headline finding.** `conditional_staleness`. Show on screen:
+**1:00 to 2:00, the headline finding.** `silent_noop_node`, because it is the one that
+survives a rebuttal. Show on screen:
 
 ```
-condition "block <= 11394644"  TRUE  at block 11394644
-action                          included at block 11394645, condition FALSE
+status = 'success'      error = None
+executionTrace = ['trigger-1']      <- the action node never ran
 ```
 
-Say: this is KeeperHub's own `execute_check_and_execute`, the primitive you use so you
-do not hand-roll read-then-act. The gate promises "only act while true" and delivers
-"act if it was true a moment ago". Open the transaction on Etherscan.
+Say: a workflow whose action node is missing `actionType` is accepted at creation,
+silently skipped at execution, and reports success. Worse, the incentive runs backwards:
+add `actionType` and creation rejects you for a missing `abi`, so the less complete
+definition passes and does nothing. For a reliability layer, a green run for an
+automation that never ran is worse than an error.
+
+Then, briefly, `conditional_staleness` as the honest secondary: the condition is checked
+at one block and the action lands at the next. Say plainly that off-chain check-then-act
+cannot be atomic, so this is a documentation gap rather than a bug, and that is exactly
+why we rate it MEDIUM.
 
 **2:00 to 2:30, the passes.** Scroll the scoreboard. Six of twelve passed, and most
 were written expecting failure. Dedupe is atomic under races, keys are bound to
@@ -78,10 +86,14 @@ payloads, reverts report honestly. Say: this is a test suite, not a hit piece, w
 why the findings are worth believing.
 
 **2:30 to 3:00, onchain.** Show `validationResponse` on Etherscan, then
-`getValidationStatus` returning `response: 38`, `tag: execution-reliability`. Say:
+`getValidationStatus` returning `response: 43`, `tag: execution-reliability`. Say:
 ERC-8004 defines three registries. KeeperHub uses identity and reputation and left
 validation empty. Reputation is what a payer felt; validation is what an independent
-checker verified. Any agent can now read this score before trusting an execution layer.
+checker verified.
+
+Say the limitation out loud rather than waiting to be asked: the agentId on this record
+is one we minted, not KeeperHub's, because theirs is mainnet-only. This proves the
+mechanism and timestamps the verdict; it is not yet a third-party score.
 
 ## What we would say if asked what is weak
 
