@@ -1,10 +1,17 @@
-# First workflow on the KeeperHub marketplace
+# Listing a workflow on the KeeperHub marketplace
 
-`search_workflows` returned **0 listed workflows**. The marketplace surface is fully
-built — search, listing, slugs, input/output schemas, per-call pricing, and agent-to-
-agent invocation via `call_workflow` — and empty.
+**Correction.** An earlier version of this file claimed the marketplace was empty and
+that ours was the first listing. That was wrong. `search_workflows` returned 0 items
+when 19 listings already existed, some dating to 2026-07-12, and the conclusion drawn
+from that single reading was not re-checked before being written down. A later call
+with identical arguments returned all 20.
 
-We listed the first one.
+Ours is the newest listing, not the first. The empty result was bad data, and treating
+one API call as ground truth was the mistake.
+
+That the search silently returned zero rather than erroring is itself worth reporting:
+an agent using `search_workflows` for discovery would have concluded there was nothing
+to call.
 
 ## `premise-freshness-check`
 
@@ -25,6 +32,19 @@ Called the way an external agent would:
 call_workflow {"slug":"premise-freshness-check","inputs":{}}
 -> {"status":"success","output":{"result":{"blockNumber":"11392743"},"success":true}}
 ```
+
+## The competitive picture
+
+20 listings, priced $0.01-$0.05 per call (ours is currently free). Several are directly
+adjacent to this project's findings:
+
+- **`assay-verify`** — "given an intent hash, reports whether the agent committed to
+  that action onchain BEFORE it executed". This is intent-commitment verification, very
+  close to the premise-invariants direction. Someone else reached a neighbouring idea.
+- **`checked-transfer-*`** (three listings) — "checks your source wallet balance and
+  sends a transfer only if the balance exceeds a threshold". This is exactly the
+  read-then-act pattern that `conditional_staleness` shows is not atomic.
+- **`position-health-check`** — reads a lending position's health factor and danger band.
 
 ## What listing taught us
 
