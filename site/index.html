@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang=en><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>Does the execution layer hold?</title>
+<style>
+:root{--bg:#0b0e14;--fg:#e6e9ef;--dim:#8b93a7;--line:#1e2430;--card:#111725;
+--high:#ff6b6b;--med:#ffb454;--ok:#3ddc97;--link:#6cb6ff}
+@media(prefers-color-scheme:light){:root{--bg:#fbfcfd;--fg:#131720;--dim:#5b6478;
+--line:#e3e8ef;--card:#fff;--link:#0b62d6}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+font:16px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:48px 20px 80px}
+h1{font-size:clamp(28px,5vw,44px);line-height:1.15;margin:0 0 12px;letter-spacing:-.02em}
+.sub{color:var(--dim);max-width:64ch;margin:0 0 36px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin:0 0 40px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.stat b{display:block;font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat span{color:var(--dim);font-size:13px}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line)}
+th{color:var(--dim);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+tr:last-child td{border-bottom:0}
+code{font:13px ui-monospace,SFMono-Regular,Menlo,monospace}
+.v{font-size:11px;font-weight:700;letter-spacing:.06em;padding:3px 8px;border-radius:99px}
+.v.finding{background:rgba(255,107,107,.14);color:var(--high)}
+.v.pass{background:rgba(61,220,151,.14);color:var(--ok)}
+.s{font-size:11px;font-weight:700;letter-spacing:.05em}
+.s.high{color:var(--high)} .s.med{color:var(--med)} .s.none{color:var(--dim)}
+h2{margin:52px 0 6px;font-size:22px;letter-spacing:-.01em}
+.lede{color:var(--dim);margin:0 0 20px}
+article{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--dim);
+border-radius:10px;padding:18px 20px;margin:0 0 14px}
+article.high{border-left-color:var(--high)} article.med{border-left-color:var(--med)}
+article h3{margin:0 0 8px;font-size:16px}
+.claim{color:var(--dim);font-size:14px;margin:0 0 8px}
+article p{margin:0 0 8px}
+.ev{font-size:13px;color:var(--dim);margin:12px 0 0!important}
+a{color:var(--link)}
+.dim{color:var(--dim)}
+footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);
+color:var(--dim);font-size:13px}
+</style></head><body><div class=wrap>
+
+<h1>Does the execution layer hold?</h1>
+<p class=sub>KeeperHub is the execution and reliability layer for onchain agents.
+Nothing let anyone check that claim, so we built something that tries to break it.
+Every result below comes from real transactions on live infrastructure. Every finding
+cites evidence you can verify yourself.</p>
+
+<div class=stats>
+  <div class=stat><b>12</b><span>scenarios</span></div>
+  <div class=stat><b>6</b><span>findings</span></div>
+  <div class=stat><b>4</b><span>high severity</span></div>
+  <div class=stat><b>6</b><span>passed</span></div>
+</div>
+
+<div class=scroll><table>
+<thead><tr><th>scenario</th><th>verdict</th><th>sev</th><th>claim tested</th></tr></thead>
+<tbody><tr class="finding">
+      <td><code>prose_drift</code></td>
+      <td><span class="v finding">FINDING</span></td>
+      <td><span class="s high">HIGH</span></td>
+      <td>Hashing the whole payload gives a stable idempotency key across a retry</td></tr><tr class="pass">
+      <td><code>semantic_key_fix</code></td>
+      <td><span class="v pass">PASS</span></td>
+      <td><span class="s none">-</span></td>
+      <td>Hashing only the semantic surface survives prose drift</td></tr><tr class="finding">
+      <td><code>omitted_key</code></td>
+      <td><span class="v finding">FINDING</span></td>
+      <td><span class="s med">MEDIUM</span></td>
+      <td>Retrying an identical transfer without a key is safe by default</td></tr><tr class="pass">
+      <td><code>concurrent_same_key</code></td>
+      <td><span class="v pass">PASS</span></td>
+      <td><span class="s none">-</span></td>
+      <td>Simultaneous retries with one key produce exactly one execution</td></tr><tr class="finding">
+      <td><code>amount_formatting</code></td>
+      <td><span class="v finding">FINDING</span></td>
+      <td><span class="s med">MEDIUM</span></td>
+      <td>Equivalent amount strings yield the same semantic key</td></tr><tr class="pass">
+      <td><code>cross_chain_key_scope</code></td>
+      <td><span class="v pass">PASS</span></td>
+      <td><span class="s none">-</span></td>
+      <td>Reusing a key with a different payload is caught, not silently applied</td></tr><tr class="finding">
+      <td><code>premise_staleness</code></td>
+      <td><span class="v finding">FINDING</span></td>
+      <td><span class="s high">HIGH</span></td>
+      <td>The premise an agent decided on still holds when its tx is included</td></tr><tr class="finding">
+      <td><code>conditional_staleness</code></td>
+      <td><span class="v finding">FINDING</span></td>
+      <td><span class="s high">HIGH</span></td>
+      <td>A met condition guarantees the action runs while it still holds</td></tr><tr class="pass">
+      <td><code>revert_reporting</code></td>
+      <td><span class="v pass">PASS</span></td>
+      <td><span class="s none">-</span></td>
+      <td>A call that will revert is reported as failed, not completed</td></tr><tr class="pass">
+      <td><code>overdraft_transfer</code></td>
+      <td><span class="v pass">PASS</span></td>
+      <td><span class="s none">-</span></td>
+      <td>An unaffordable transfer is rejected cleanly, not left pending</td></tr><tr class="finding">
+      <td><code>silent_noop_node</code></td>
+      <td><span class="v finding">FINDING</span></td>
+      <td><span class="s high">HIGH</span></td>
+      <td>A workflow whose action node never runs does not report success</td></tr><tr class="pass">
+      <td><code>parallel_distinct_transfers</code></td>
+      <td><span class="v pass">PASS</span></td>
+      <td><span class="s none">-</span></td>
+      <td>Concurrent distinct transfers all land; none blocks the others</td></tr></tbody></table></div>
+
+<h2>Findings</h2>
+<p class=lede>Each states a guarantee a builder would reasonably assume, and what
+happened when we leaned on it.</p>
+<article class="high">
+          <h3><span class="s high">HIGH</span> <code>prose_drift</code></h3>
+          <p class="claim">Claim tested: Hashing the whole payload gives a stable idempotency key across a retry</p>
+          <p>Same transaction, two executions. The payloads differ only in a free-text `reason` field the model rewrote -- observed verbatim from llama-3.3-70b and gpt-oss-120b at temperature 0.</p>
+          <p class="ev"><code>0x2bmaswm8hvyf64myn9r</code> <code>i41oy3em8vm436g7kfdw4</code></p></article><article class="med">
+          <h3><span class="s med">MEDIUM</span> <code>omitted_key</code></h3>
+          <p class="claim">Claim tested: Retrying an identical transfer without a key is safe by default</p>
+          <p>Two identical transfers, two executions. Duplicate protection is opt-in: an agent that never sets idempotency_key has none, and nothing warns it.</p>
+          <p class="ev"><code>js2ax8f6h5uj8vdab8kz3</code> <code>thwp2oekezcngb1u2hhx1</code></p></article><article class="med">
+          <h3><span class="s med">MEDIUM</span> <code>amount_formatting</code></h3>
+          <p class="claim">Claim tested: Equivalent amount strings yield the same semantic key</p>
+          <p>&#x27;0.001&#x27; and &#x27;0.0010&#x27; are the same transfer but hash differently, so even the semantic key double-spends unless amounts are normalized before hashing. A model re-emitting a number in another format is enough.</p>
+          <p class="ev"><code>3asp0ypmgerj11vn39o7f</code> <code>59n6kaz5mzub429mzrqwz</code></p></article><article class="high">
+          <h3><span class="s high">HIGH</span> <code>premise_staleness</code></h3>
+          <p class="claim">Claim tested: The premise an agent decided on still holds when its tx is included</p>
+          <p>Decided at block 11392814 on the premise &#x27;block &lt;= 11392814&#x27;. Included at block 11392815, 1 block(s) later (14.1s). The premise was FALSE at inclusion and the transaction executed anyway. Simulation verifies feasibility, never justification, so this is invisible: the transaction succeeds and reports success.</p>
+          <p class="ev"><a href="https://sepolia.etherscan.io/tx/0x6dd3a8ff0f1d50946bef787ee2e9b07a9b384defea8c8b1b533702a42ddc0ada" target="_blank" rel="noopener">0x6dd3a8ff…dc0ada</a> <code>decided@11392814</code> <code>included@11392815</code></p></article><article class="high">
+          <h3><span class="s high">HIGH</span> <code>conditional_staleness</code></h3>
+          <p class="claim">Claim tested: A met condition guarantees the action runs while it still holds</p>
+          <p>Condition &#x27;block &lt;= 11392815&#x27; evaluated true at block 11392815; the action was included at block 11392817, 2 block(s) later, where it is false. KeeperHub&#x27;s own read-condition-act primitive carries the gap it exists to remove: the check and the action are not atomic, so the gate says &#x27;only act while true&#x27; and delivers &#x27;act if it was true a moment ago&#x27;. An agent that hand-rolls this at least knows it is racing.</p>
+          <p class="ev"><a href="https://sepolia.etherscan.io/tx/0x5e1a06c785685a49368ec23a39eaca8cd2b18a19a4c2264fe9da4faedec80a30" target="_blank" rel="noopener">0x5e1a06c7…c80a30</a> <code>checked@11392815</code> <code>executed@11392817</code></p></article><article class="high">
+          <h3><span class="s high">HIGH</span> <code>silent_noop_node</code></h3>
+          <p class="claim">Claim tested: A workflow whose action node never runs does not report success</p>
+          <p>status=&#x27;success&#x27; but executionTrace=[&#x27;trigger-1&#x27;] -- the action node was skipped and the run still reported success, with error=None. The node was missing `actionType`; supplying it makes creation reject the workflow for a missing `abi`, so the *less* complete definition passes validation and silently does nothing, while the more complete one is caught. An agent sees a green run and an audit trail of success for an automation that never ran.</p>
+          <p class="ev"><code>trace=[&#x27;trigger-1&#x27;]</code> <code>status=success</code></p></article>
+
+<h2>What held up</h2>
+<p class=lede>6 of 12 scenarios passed, and most were written expecting a failure.
+Dedupe is atomic under concurrent retries. Idempotency keys are bound to payloads, so
+reuse with a changed payload is refused rather than silently returning a stale result.
+Reverts report as failures with a reason. Unaffordable sends are refused before
+submission with no nonce consumed. Concurrent transfers all land, so a busy agent does
+not head-of-line block itself. This is a test suite, not a hit piece.</p>
+
+<footer>Built 2026-08-01 00:25 UTC from <code>chaos/last_run.json</code>.
+Transactions on Ethereum Sepolia. Gas sponsored by KeeperHub.</footer>
+</div></body></html>
