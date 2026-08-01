@@ -1,0 +1,133 @@
+{
+  "score": 38,
+  "scored_at": "2026-08-01T00:46:06Z",
+  "subject": "KeeperHub execution layer",
+  "method": "chaos harness, live transactions on Ethereum Sepolia",
+  "scoring": "share of tested guarantees that held; HIGH findings weighted double",
+  "totals": {
+    "scenarios": 12,
+    "passed": 6,
+    "findings": 6,
+    "high": 4
+  },
+  "results": [
+    {
+      "scenario": "prose_drift",
+      "verdict": "FINDING",
+      "severity": "HIGH",
+      "claim": "Hashing the whole payload gives a stable idempotency key across a retry",
+      "evidence": [
+        "0x2bmaswm8hvyf64myn9r",
+        "i41oy3em8vm436g7kfdw4"
+      ]
+    },
+    {
+      "scenario": "semantic_key_fix",
+      "verdict": "PASS",
+      "severity": "-",
+      "claim": "Hashing only the semantic surface survives prose drift",
+      "evidence": [
+        "3asp0ypmgerj11vn39o7f"
+      ]
+    },
+    {
+      "scenario": "omitted_key",
+      "verdict": "FINDING",
+      "severity": "MEDIUM",
+      "claim": "Retrying an identical transfer without a key is safe by default",
+      "evidence": [
+        "6mr4nbq8k2oxsrljzx6f6",
+        "f8ubnn8wry3ogk21ogw2p"
+      ]
+    },
+    {
+      "scenario": "concurrent_same_key",
+      "verdict": "PASS",
+      "severity": "-",
+      "claim": "Simultaneous retries with one key produce exactly one execution",
+      "evidence": [
+        "6ngha1e1gxku6q7w8wx1q"
+      ]
+    },
+    {
+      "scenario": "amount_formatting",
+      "verdict": "FINDING",
+      "severity": "MEDIUM",
+      "claim": "Equivalent amount strings yield the same semantic key",
+      "evidence": [
+        "3asp0ypmgerj11vn39o7f",
+        "59n6kaz5mzub429mzrqwz"
+      ]
+    },
+    {
+      "scenario": "cross_chain_key_scope",
+      "verdict": "PASS",
+      "severity": "-",
+      "claim": "Reusing a key with a different payload is caught, not silently applied",
+      "evidence": [
+        "wkwdsnylc5so6bylyr4bs"
+      ]
+    },
+    {
+      "scenario": "premise_staleness",
+      "verdict": "FINDING",
+      "severity": "HIGH",
+      "claim": "The premise an agent decided on still holds when its tx is included",
+      "evidence": [
+        "0x78f0f00ff4e9ad0c36a71f29b6338aab9b58d5f59f4d66ea5cca777e346dfda8",
+        "decided@11392909",
+        "included@11392910"
+      ]
+    },
+    {
+      "scenario": "conditional_staleness",
+      "verdict": "FINDING",
+      "severity": "HIGH",
+      "claim": "A met condition guarantees the action runs while it still holds",
+      "evidence": [
+        "0xabe982c29e8207bd23b3eca7ea2e2c726169752bfe280e5445c57fcd2134f748",
+        "checked@11392910",
+        "executed@11392911"
+      ]
+    },
+    {
+      "scenario": "revert_reporting",
+      "verdict": "PASS",
+      "severity": "-",
+      "claim": "A call that will revert is reported as failed, not completed",
+      "evidence": [
+        "9xhf99jtsvndz96i94bga"
+      ]
+    },
+    {
+      "scenario": "overdraft_transfer",
+      "verdict": "PASS",
+      "severity": "-",
+      "claim": "An unaffordable transfer is rejected cleanly, not left pending",
+      "evidence": [
+        "5w1njgica0clqynxgmtcy"
+      ]
+    },
+    {
+      "scenario": "silent_noop_node",
+      "verdict": "FINDING",
+      "severity": "HIGH",
+      "claim": "A workflow whose action node never runs does not report success",
+      "evidence": [
+        "trace=['trigger-1']",
+        "status=success"
+      ]
+    },
+    {
+      "scenario": "parallel_distinct_transfers",
+      "verdict": "PASS",
+      "severity": "-",
+      "claim": "Concurrent distinct transfers all land; none blocks the others",
+      "evidence": [
+        "1p34yy6huq3fzizp3569m",
+        "fl7c9lsrmilj6glhw6ynq",
+        "iq9wi1g7lzpyzxtbs8oos"
+      ]
+    }
+  ]
+}

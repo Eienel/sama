@@ -1,0 +1,15 @@
+{
+  "register_tx": "0x02130b6f04edb232f73a8826fb47e5e26a9186e0c286be61022e757606eac22c",
+  "register_status": "completed",
+  "agent_id": 9139,
+  "wallet": "0x22eC6D712F60Fb032b307D98E1c245af8401d950",
+  "identity_registry": "0x8004A818BFB912233c491871b3d84c89A494BD9e",
+  "validation_registry": "0x8004Cb1BF31DAf7788923b405b754f57acEB4272",
+  "chain": "11155111",
+  "last_publish": {
+    "hash": "0xc04b861f555a9989ef6a92e471784a475c7217a66aabeb98be58b8c4290b902e",
+    "score": 38,
+    "request_tx": "0x49dd98362217f794ae03956de5328585440c9d585bac25b6852f8da24198f696",
+    "response_tx": "0x52a568aff9d960854da832769d36b10d83646cd4fb33fee3654de546820aa478"
+  }
+}
