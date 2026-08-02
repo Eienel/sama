@@ -1,5 +1,9 @@
 # Ready to file on KeeperHub/keeperhub
 
+**Status:** item 6 is filed as a PR rather than an issue:
+[KeeperHub/keeperhub#1877](https://github.com/KeeperHub/keeperhub/pull/1877).
+Items 1 to 5 remain to be filed.
+
 Each is written as a maintainer would want to receive it: what happened, how to
 reproduce, why it matters, and a proposed fix. Reproductions are real, from going from
 a fresh account to a working call in a container.

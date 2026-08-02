@@ -117,7 +117,13 @@ mechanism and timestamps the verdict; it is not yet a third-party score.
 
 ## Contribution to KeeperHub
 
-Beyond the audit, ready to file as issues or PRs:
+**Filed: [KeeperHub/keeperhub#1877](https://github.com/KeeperHub/keeperhub/pull/1877)**, a docs
+PR adding a section on deriving an idempotency key when the caller is an LLM agent.
+Additive, one file, 33 lines, no behaviour change. It opens by establishing that
+KeeperHub's dedupe is correct given a stable key, because it is: the gap is that
+nothing tells the caller how to derive one that stays stable.
+
+The remainder, ready to file as issues:
 
 1. Onboarding offers only browser OAuth, which cannot complete in a container, and the
    headless API-key path is absent from both the wizard and the official plugin.
