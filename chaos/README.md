@@ -81,7 +81,7 @@ sufficient: values must be normalized (numbers parsed, addresses case-folded) be
 hashing. A model re-emitting a number in another format is enough to defeat a
 half-implemented fix.
 
-### HIGH: `premise_staleness`
+### MEDIUM: `premise_staleness`
 
 The agent reads chain height through KeeperHub, observes block N, and acts on the
 premise `block <= N`: true at the moment of decision. The transaction is then
@@ -104,7 +104,7 @@ premise at submission and abort rather than execute.
 Block height is a deliberately unarguable premise (it always advances). Real premises
 - a health factor, a price, an allowance: expire the same way and less predictably.
 
-### HIGH: `conditional_staleness`
+### MEDIUM: `conditional_staleness`
 
 The obvious objection to the finding above is "don't hand-roll read-then-act, use the
 primitive." So we aimed the same test at `execute_check_and_execute`, which reads a
@@ -116,14 +116,12 @@ action                          included at block 11392655: condition FALSE
 tx 0x058bddf6da9ef46956e3cc408c048bb228fbe3d9e1fae3817a8cee75a43f7f49
 ```
 
-**The primitive carries the gap it exists to remove.** The check and the action are
-not atomic, so the gate advertises "only act while this is true" and delivers "act if
-it was true a moment ago". Reproduced across independent runs (11392650→11392651,
-11392654→11392655).
-
-This is worse than the hand-rolled case rather than equivalent: an agent that writes
-its own read-then-act at least knows it is racing. An agent handed a conditional
-primitive reasonably assumes the condition is enforced at execution.
+**Stated fairly: off-chain check-then-act cannot be atomic, so this is inherent rather
+than a defect.** The issue is that nothing says so. The primitive's name and shape imply
+the condition gates the action, and an agent handed it reasonably assumes enforcement at
+execution. Documented, this is a caveat; undocumented, it is a trap. We rated this HIGH
+initially and that overstated it. Reproduced across independent runs
+(11392650 to 11392651, 11392654 to 11392655).
 
 The fix is not to remove the tool: it is to re-check the condition at submission and
 abort if it no longer holds, which is exactly what "premise invariants" means.
@@ -150,7 +148,8 @@ def my_scenario(w: str) -> Result:
 Two rules, both learned from getting them wrong:
 
 1. **It must be able to come back clean.** A scenario that can only find problems is a
-   demo, not a test. Five of ten currently pass, and four of those were written
-   expecting a failure.
+   demo, not a test. 6 of 12 currently pass, and most were written
+   expecting a failure. `agentaudit/` enforces this mechanically: every scenario must
+   be able to reach both verdicts against a Mock, or the test suite fails.
 2. **Every FINDING carries verifiable evidence**: execution ids or transaction
    hashes a third party can check.
