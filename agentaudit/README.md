@@ -4,9 +4,38 @@ Test suite for onchain agent execution. Point it at your execution layer, find o
 which guarantees actually hold.
 
 ```bash
-python3 -m agentaudit.cli --adapter mock          # offline, no key, no funds
+python3 -m agentaudit.cli --adapter local-evm     # real EVM, in-process, no setup
 python3 -m agentaudit.cli --adapter keeperhub     # live, needs KEEPERHUB_API_KEY
+python3 -m agentaudit.cli --compare local-evm keeperhub
 ```
+
+## The comparison is the point
+
+The question a builder actually has is not "is this provider perfect". It is "what does
+using it buy me over signing transactions myself".
+
+```
+COMPARISON           local-evm     keeperhub
+amount_formatting    FINDING/M     FINDING/M
+concurrent_same_key  FINDING/H     PASS
+omitted_key          FINDING/M     FINDING/M
+premise_staleness    FINDING/M     FINDING/M
+prose_drift          FINDING/H     FINDING/H
+revert_reporting     PASS          PASS
+semantic_key_fix     FINDING/H     PASS
+passed               1/7           3/7
+
+Guarantees keeperhub provides that a raw signer does not:
+  concurrent_same_key, semantic_key_fix
+```
+
+A raw signer has no idempotency layer at all: it signs and sends, and nothing else
+happens for you. That is the honest baseline, and it is what makes the provider's
+guarantees measurable rather than asserted.
+
+Note what does **not** improve: prose drift, amount formatting and premise staleness
+are the caller's problem on both, because they are properties of how an agent derives
+keys and reads state, not of who submits the transaction.
 
 ## Why this exists as a framework rather than an audit
 

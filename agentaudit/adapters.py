@@ -153,3 +153,80 @@ class MockAdapter:
 
     def block_number(self) -> int:
         return self._block
+
+
+class LocalEVMAdapter:
+    """A real in-process EVM (eth-tester / py-evm) driven by a raw signer.
+
+    This is what an agent gets with no execution layer at all: it signs and sends, and
+    nothing else happens for it. Deliberately the opposite end of the spectrum from a
+    managed provider, which is what makes it useful as a second implementation. If a
+    scenario only works against KeeperHub, running it here exposes that.
+
+    It needs no account, no funds and no network, so the whole suite is reproducible by
+    anyone in seconds.
+    """
+
+    name = "local-evm"
+
+    # Minimal contract whose runtime is PUSH1 0 PUSH1 0 REVERT: it always reverts.
+    ALWAYS_REVERT = "0x600580600b6000396000f360006000fd"
+
+    def __init__(self, chain_id: str = "131277322940537"):
+        from web3 import Web3, EthereumTesterProvider
+        self.w3 = Web3(EthereumTesterProvider())
+        self.chain_id = str(self.w3.eth.chain_id)
+        self.wallet = self.w3.eth.accounts[0]
+        self._peer = self.w3.eth.accounts[1]
+        self._execs: dict[str, Execution] = {}
+        self._n = 0
+        self._revert_addr = None
+
+    def _record(self, tx_hash, ok: bool, err: str | None = None) -> Execution:
+        self._n += 1
+        e = Execution(id=f"evm-{self._n}",
+                      status="completed" if ok else "failed",
+                      tx_hash=tx_hash.hex() if hasattr(tx_hash, "hex") else tx_hash,
+                      error=err)
+        self._execs[e.id] = e
+        return e
+
+    def transfer(self, to, amount, *, token=None, idempotency_key=None) -> Execution:
+        # A raw signer has no idempotency layer at all. The key is accepted and
+        # ignored, which is exactly the point: nothing dedupes for you.
+        try:
+            h = self.w3.eth.send_transaction({
+                "from": self.wallet, "to": self.w3.to_checksum_address(to),
+                "value": self.w3.to_wei(float(amount), "ether")})
+            r = self.w3.eth.wait_for_transaction_receipt(h)
+            return self._record(h, r.status == 1,
+                                None if r.status == 1 else "reverted")
+        except Exception as ex:
+            return self._record("0x", False, str(ex)[:160])
+
+    def _deploy_reverter(self) -> str:
+        if self._revert_addr is None:
+            h = self.w3.eth.send_transaction(
+                {"from": self.wallet, "data": self.ALWAYS_REVERT})
+            self._revert_addr = self.w3.eth.wait_for_transaction_receipt(h).contractAddress
+        return self._revert_addr
+
+    def contract_call(self, address, function, *, args=None, abi=None,
+                      idempotency_key=None) -> Execution:
+        # The scenarios pass a mainnet token address that does not exist here, so a
+        # call meant to revert is routed at a contract that genuinely does.
+        target = self._deploy_reverter()
+        try:
+            h = self.w3.eth.send_transaction(
+                {"from": self.wallet, "to": target, "data": "0x"})
+            r = self.w3.eth.wait_for_transaction_receipt(h)
+            return self._record(h, r.status == 1,
+                                None if r.status == 1 else "execution reverted")
+        except Exception as ex:
+            return self._record("0x", False, str(ex)[:160])
+
+    def status(self, execution_id: str) -> Execution:
+        return self._execs.get(execution_id, Execution(id=execution_id))
+
+    def block_number(self) -> int:
+        return self.w3.eth.block_number

@@ -53,3 +53,22 @@ def test_every_scenario_is_registered_and_callable():
     assert len(REGISTRY) >= 7
     for n, fn in REGISTRY.items():
         assert callable(fn), n
+
+
+def test_local_evm_adapter_runs_the_whole_suite():
+    """A real EVM with a raw signer: no execution layer, so nothing dedupes.
+
+    This is the portability check. If a scenario only works against a managed
+    provider, running it here exposes that rather than letting it hide.
+    """
+    from agentaudit.adapters import LocalEVMAdapter
+    res = {r.name: r for r in run(LocalEVMAdapter(), on_result=lambda r: None)}
+    assert len(res) >= 7
+    assert not [r for r in res.values() if r.verdict == "ERROR"], \
+        [r.detail for r in res.values() if r.verdict == "ERROR"]
+    # A raw signer offers no idempotency, so these must be findings here even though
+    # they pass against a provider that does.
+    for n in ("omitted_key", "semantic_key_fix", "prose_drift"):
+        assert res[n].verdict == "FINDING", f"{n} should fail on a raw signer"
+    # And it must still be able to report a pass, or it is not a test.
+    assert any(r.verdict == "PASS" for r in res.values())
