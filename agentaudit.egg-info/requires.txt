@@ -1,0 +1,7 @@
+web3<8,>=7
+eth-tester[py-evm]
+
+[dev]
+pytest
+
+[keeperhub]

@@ -1,7 +1,8 @@
 """agentaudit: run the suite against any execution layer.
 
-    python3 -m agentaudit.cli --adapter mock          # offline, no key needed
-    python3 -m agentaudit.cli --adapter keeperhub     # live, needs KEEPERHUB_API_KEY
+    agentaudit --adapter local-evm                    # real EVM in-process, no setup
+    agentaudit --adapter keeperhub                    # live, needs KEEPERHUB_API_KEY
+    agentaudit --compare local-evm keeperhub          # what does a provider buy you
 """
 import argparse, json, sys
 from . import scenarios  # noqa: F401  registers them
@@ -21,7 +22,7 @@ def build(name: str, chain: str):
     raise SystemExit(f"unknown adapter {name!r}")
 
 
-def compare(names: list, chain: str, only=None) -> int:
+def compare(names: list, chain: str, only=None, out: str | None = None) -> int:
     """Run the same suite against several execution layers and show the difference.
 
     This is the question a builder actually has: not "is this provider perfect", but
@@ -71,6 +72,15 @@ def compare(names: list, chain: str, only=None) -> int:
                 who = [n for n in runs if n != base and runs[n].get(s)
                        and runs[n][s].verdict == "PASS"]
                 print(f"  {s:<28} held by: {', '.join(who)}")
+
+    if out:
+        payload = {n: {s: {"verdict": r.verdict, "severity": r.severity,
+                           "claim": r.claim, "detail": r.detail,
+                           "evidence": r.evidence}
+                       for s, r in v.items()} for n, v in runs.items()}
+        with open(out, "w") as fh:
+            json.dump(payload, fh, indent=2)
+        print(f"\nwritten to {out}")
     return 0
 
 
@@ -86,7 +96,8 @@ def main() -> int:
     a = ap.parse_args()
 
     if a.compare is not None:
-        return compare(a.compare or ["local-evm", "keeperhub"], a.chain, a.only)
+        return compare(a.compare or ["local-evm", "keeperhub"], a.chain,
+                       a.only, a.json)
 
     adapter = build(a.adapter, a.chain)
     print(f"agentaudit | adapter={adapter.name} chain={adapter.chain_id}\n")
@@ -103,7 +114,8 @@ def main() -> int:
         if r.evidence:
             print(f"   evidence: {', '.join(map(str, r.evidence))}")
     if a.json:
-        json.dump([r.__dict__ for r in res], open(a.json, "w"), indent=2)
+        with open(a.json, "w") as fh:
+            json.dump([r.__dict__ for r in res], fh, indent=2)
         print(f"\nwritten to {a.json}")
     return 0
 
