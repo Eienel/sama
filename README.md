@@ -82,6 +82,19 @@ transfers all land, so a busy agent does not head-of-line block itself.
 | `probe1/` | the offline experiment behind `prose_drift`, cross-model at temperature 0 |
 | `keeperhub/` | headless MCP client, double-spend writeup, marketplace notes, friction log |
 
+## Try it on your own agent
+
+If you have a coding agent open in your project, `TESTERS.md` has a prompt you can
+paste that installs this, runs it, then reads your code for the three failure patterns
+it measures and writes up what it finds. Two minutes, no account needed.
+
+Or directly:
+
+```bash
+pip install -e .
+agentaudit --adapter local-evm        # real EVM in-process, no setup at all
+```
+
 ## Running
 
 ```bash
