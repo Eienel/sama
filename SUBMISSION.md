@@ -13,7 +13,7 @@ published the verdict onchain to the ERC-8004 registry they left empty.
 
 | requirement | value |
 |---|---|
-| Source code | `https://github.com/eienel/sama` (branch `claude/relaxed-ride-a9py6j`) |
+| Source code | https://github.com/Eienel/sama |
 | Demo video | see script below, not yet recorded |
 | Transaction executed by the agent | [`0x9378fa1b…5a4e75`](https://sepolia.etherscan.io/tx/0x9378fa1bcc730bf664a07617d06c91dd54a9f873676b4c6a3f4b4317415a4e75) (ERC-8004 `validationResponse`) |
 | Agent framework | custom, model served via Groq (`llama-3.3-70b-versatile`) |
