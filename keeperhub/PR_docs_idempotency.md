@@ -1,8 +1,8 @@
 # PR: document how to choose an idempotency key when the caller is an LLM
 
-**File:** `docs/api/direct-execution.md`
-**Where:** insert after the existing `## Idempotency` bullet list, before the
-`curl` example (currently after line 60).
+**Filed:** [KeeperHub/keeperhub#1877](https://github.com/KeeperHub/keeperhub/pull/1877)
+**File:** `docs/api/direct-execution.md`, base `staging`, head `Eienel:docs-idempotency-llm-agents`
+**Final section:** `PR_SECTION.md` in this directory, kept in sync with the PR branch.
 
 ## Why this is a good first PR
 
@@ -11,127 +11,54 @@ conflict, in-progress, scope and window are all there. Nothing in this PR says o
 
 The gap is one step earlier. The docs say the key is "any client-chosen string (for
 example an agent-side transaction id, ideally a UUID)". That is right for a
-deterministic client and misleading for an LLM agent, because an agent that loses
-context and regenerates its request generates a *new* UUID, so the retry does not
-dedupe at all.
+deterministic client and misleading for a caller that reconstructs its request rather
+than replaying buffered bytes, because the reconstruction produces a *new* UUID, so the
+retry does not dedupe at all.
 
-Additive, no behaviour change, no criticism of their implementation, and backed by
-transactions anyone can verify. That is the kind of PR that gets merged.
+Additive, one file, no behaviour change, no criticism of their implementation.
 
----
+## What review changed
 
-## The patch
+Reviewer **suisuss** requested changes. Five items, all addressed across commits
+`5483a55`, `eec1586`, `6d12814`, `6c03911`:
 
-Insert this section:
+1. **Regenerated `specs/api-coverage.json`** via `npx tsx scripts/check-api-docs-routes.ts`.
+   The repo has a `check:api-docs` gate that fails on a stale spec.
+2. **Relocated the section** below the curl block and the workflow-webhook sentence,
+   and added an anchor link from the `## Idempotency` intro so the pointer is not lost.
+3. **Dropped the Python helper** for a language-neutral canonical form. A Python
+   snippet in a docs page aimed at HTTP callers implies a reference implementation we
+   were not shipping; the `chainId`/`network` alias also had to be resolved as an
+   explicit canonicalization rule rather than assumed away.
+4. **Made `taskId` lead the canonical form.** The original draft hashed only the effect
+   fields and treated a task identifier as an add-on for payroll. That is backwards:
+   effect-only hashing silently swallows a legitimate repeat payment, which is worse
+   than a duplicate because nothing is left onchain to notice.
+5. **Dropped the temperature-0 measurement claim.** Our own probe results do not support
+   a general cross-model claim (qwen3.6-27b was perfectly stable), and the reviewer's
+   framing, "not guaranteed byte-identical between calls even at temperature 0", is both
+   stronger and true without measurement.
 
-```markdown
-### Choosing a key when the caller is an AI agent
+Two corrections we made to ourselves during the revision, worth recording:
 
-The guidance above assumes the retry sends the same key. That assumption breaks when
-an LLM agent loses context and regenerates its request, which is the common case after
-a crash, a restart, or a compacted conversation.
+- We initially told the user the reviewer was wrong about the `chainId`/`network` alias.
+  Wrong on the doc detail, right on the substance: `body.chainId ?? body.network` is
+  confirmed at `transfer:108`, `check-and-execute:256` and `[...slug]:123`.
+- We claimed the section "leads with" the byte-identical argument when that sentence was
+  not in the section at all. It is now.
 
-Two derivations that look reasonable and are not:
+## Evidence behind the claim
 
-**A fresh UUID per attempt.** The regenerated request gets a new key, so it reads as a
-new request and executes again. A UUID only works if the agent persists it *before*
-the first attempt and can recover it afterwards.
-
-**A hash of the request body.** This is the textbook derivation, and it is safe only
-while the body is byte-stable. If the body carries any model-authored text (a `reason`,
-`memo`, `description` or `note`), the model rewords it on regeneration, the hash
-changes, and the duplicate is not caught. This was measured on two model families at
-temperature 0, where sampling nondeterminism is off: the same transaction was emitted
-with reworded prose, producing different keys and two onchain transfers for one
-intended payment.
-
-**Derive the key from the fields that determine the onchain effect**, and normalize
-them first:
-
-```python
-SEMANTIC = ("chainId", "recipientAddress", "amount", "tokenAddress")
-
-def idempotency_key(req: dict) -> str:
-    parts = {
-        "chainId": str(req["chainId"]),
-        "recipientAddress": req["recipientAddress"].lower(),
-        "amount": f"{float(req['amount']):.18f}".rstrip("0").rstrip("."),
-        "tokenAddress": (req.get("tokenAddress") or "").lower(),
-    }
-    return sha256(json.dumps(parts, sort_keys=True).encode()).hexdigest()
-```
-
-Normalization matters on its own: `"0.001"` and `"0.0010"` are the same transfer and
-hash differently, as do a checksummed and a lowercase address.
-
-Add a task or period identifier to the hashed fields when the same transfer is
-legitimately repeated, for example a monthly payroll run:
-
-```python
-parts["period"] = "2026-08"
-```
-
-Note the limit of any idempotency key: it makes a *repeated* intent safe. It does not
-help when the agent regenerates a genuinely *different* action, or when the state that
-justified the transaction has changed by the time it lands. Those need a re-check
-before submission, not deduplication.
-```
-
----
-
-## Suggested PR title
-
-```
-docs: how to derive an idempotency key when the caller is an LLM agent
-```
-
-## Suggested PR description
-
-```markdown
-The idempotency docs are clear on how the key behaves once chosen (replay, conflict,
-in-progress, scope, window). This adds the step before that: how to derive one when
-the caller is an LLM agent.
-
-The current suggestion, "an agent-side transaction id, ideally a UUID", is correct for
-a deterministic client. It breaks for an agent that loses context and regenerates its
-request, because the regenerated request carries a new UUID and executes again.
-
-The other obvious derivation, hashing the request body, breaks for a subtler reason:
-if the body contains model-authored text, the model rewords it on regeneration and the
-hash changes. I measured this on llama-3.3-70b and gpt-oss-120b at temperature 0, then
-reproduced the resulting double-spend through KeeperHub on Sepolia:
+The double-spend reproduced through KeeperHub on Sepolia, two transactions for one
+intended payment, differing only in a free-text `reason` field:
 
 - https://sepolia.etherscan.io/tx/0x63502437bb5d3d33223423ae529136fdb468bc1d6ad2818a3a41749e21f430ed
 - https://sepolia.etherscan.io/tx/0x634ff5ca5de4ef620000889fc74a52ef2d386e4b3fef24be370be470d5b07cc6
 
-Two transactions, one intended payment, no error. Only the free-text `reason` field
-differed between them.
+This is not a bug in KeeperHub. Dedupe behaves correctly given a stable key: the
+byte-identical retry returned the original `executionId` and did not execute again,
+concurrent reuse was rejected `409 idempotency_in_progress`, and reuse with a changed
+payload was rejected `409 idempotency_conflict` rather than answered from cache. The gap
+is only that nothing tells the caller how to derive a key that stays stable.
 
-To be clear, this is not a bug in KeeperHub. Dedupe behaves correctly given a stable
-key: the byte-identical retry returned the original `executionId` and did not execute
-again, concurrent reuse was rejected `409 idempotency_in_progress`, and reuse with a
-changed payload was rejected `409 idempotency_conflict` rather than silently answered
-from cache. The gap is only that nothing tells the caller how to derive a key that
-stays stable.
-
-The section is additive and changes no behaviour. Method and full results:
-https://github.com/Eienel/sama/blob/main/keeperhub/DOUBLE_SPEND.md
-
-Happy to adjust the tone or trim it if you would rather this were shorter.
-```
-
----
-
-## How to open it
-
-You do not need to clone or fork manually. GitHub forks for you:
-
-1. Open
-   https://github.com/KeeperHub/keeperhub/blob/staging/docs/api/direct-execution.md
-2. Click the pencil (Edit). GitHub creates a fork automatically.
-3. Paste the section after the bullet list, before the `curl` example.
-4. "Commit changes", choose "Create a new branch and start a pull request".
-5. Use the title and description above.
-
-**Note their default branch is `staging`, not `main`.** Target the PR at `staging` or
-it will be closed for the wrong base.
+Method and full results: `DOUBLE_SPEND.md`, `../probe1/RESULTS.md`.

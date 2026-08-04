@@ -118,10 +118,11 @@ mechanism and timestamps the verdict; it is not yet a third-party score.
 ## Contribution to KeeperHub
 
 **Filed: [KeeperHub/keeperhub#1877](https://github.com/KeeperHub/keeperhub/pull/1877)**, a docs
-PR adding a section on deriving an idempotency key when the caller is an LLM agent.
-Additive, one file, 33 lines, no behaviour change. It opens by establishing that
-KeeperHub's dedupe is correct given a stable key, because it is: the gap is that
-nothing tells the caller how to derive one that stays stable.
+PR adding a section on deriving an idempotency key that survives a retry. Additive, one
+file, +62 lines, no behaviour change. It establishes that KeeperHub's dedupe is correct
+given a stable key, because it is: the gap is that nothing tells the caller how to
+derive one that stays stable. Review requested changes and all five were addressed
+(`keeperhub/PR_docs_idempotency.md` records what changed and why).
 
 The remainder, ready to file as issues:
 
