@@ -1,6 +1,6 @@
 KeeperHub's own research says **76% of 2025 DeFi losses came from infrastructure, not code.** Nothing lets you check whether an execution layer actually holds up. sama is that check, plus an audit of KeeperHub run with it.
 
-**12 scenarios against live infrastructure. 6 findings, 6 passes, every claim carrying a transaction hash.**
+**13 scenarios against live infrastructure. 6 findings, 7 passes, every claim carrying a transaction hash.**
 
 The passes matter as much as the findings: most were written expecting a failure. That is the only reason the findings are worth believing.
 

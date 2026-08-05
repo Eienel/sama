@@ -38,8 +38,8 @@ create/update/execute, `get_execution`, the audit trail, the marketplace
 (`list_workflow`, `call_workflow`), and x402 as a seller with a listing priced at 0.01
 USDC on Base.
 
-**Reliability and observability.** This is the whole project. 12 scenarios, 6 findings
-(2 HIGH, 4 MEDIUM), 6 passes, every claim carrying a transaction hash.
+**Reliability and observability.** This is the whole project. 13 scenarios, 6 findings
+(2 HIGH, 4 MEDIUM), 7 passes, every claim carrying a transaction hash.
 
 **Originality.** The findings are not reproductions of known issues. The staleness gap
 in `execute_check_and_execute` and the silent no-op on a workflow node were both found
@@ -80,7 +80,7 @@ at one block and the action lands at the next. Say plainly that off-chain check-
 cannot be atomic, so this is a documentation gap rather than a bug, and that is exactly
 why we rate it MEDIUM.
 
-**2:00 to 2:30, the passes.** Scroll the scoreboard. Six of twelve passed, and most
+**2:00 to 2:30, the passes.** Scroll the scoreboard. Seven of thirteen passed, and most
 were written expecting failure. Dedupe is atomic under races, keys are bound to
 payloads, reverts report honestly. Say: this is a test suite, not a hit piece, which is
 why the findings are worth believing.
@@ -119,10 +119,13 @@ mechanism and timestamps the verdict; it is not yet a third-party score.
 
 **Filed: [KeeperHub/keeperhub#1877](https://github.com/KeeperHub/keeperhub/pull/1877)**, a docs
 PR adding a section on deriving an idempotency key that survives a retry. Additive, one
-file, +62 lines, no behaviour change. It establishes that KeeperHub's dedupe is correct
+file, +103 lines, no behaviour change. It establishes that KeeperHub's dedupe is correct
 given a stable key, because it is: the gap is that nothing tells the caller how to
-derive one that stays stable. Review requested changes and all five were addressed
-(`keeperhub/PR_docs_idempotency.md` records what changed and why).
+derive one that stays stable. Two review rounds, both addressed
+(`keeperhub/PR_docs_idempotency.md` records what changed and why). The second round
+changed our own understanding: a stable key with a reworded body returns
+`409 idempotency_conflict` rather than replaying, which is the safe direction and is now
+what the section teaches. `body_drift_conflict` verifies it against live infrastructure.
 
 The remainder, ready to file as issues:
 

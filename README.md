@@ -7,7 +7,7 @@ simulation, transaction and outcome, and nobody reads it back.
 This is a chaos harness that deliberately breaks agent execution through KeeperHub and
 reports what survives: with transaction hashes for every claim.
 
-**12 scenarios · 6 findings · 2 HIGH · 4 MEDIUM · 6 passes.** Every run executes real transactions
+**13 scenarios · 6 findings · 2 HIGH · 4 MEDIUM · 7 passes.** Every run executes real transactions
 on Ethereum Sepolia. Gas is sponsored and transfers are self-directed, so a full pass
 costs nothing and is repeatable indefinitely.
 

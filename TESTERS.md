@@ -85,7 +85,7 @@ to build things, and that is worth more to us than a confirmed hit.
 
 `agentaudit` is a test suite for onchain agent execution. It came out of auditing
 KeeperHub for the Agents Onchain hackathon, where it found a reproducible double-spend
-and a workflow that reported success while its action node never ran. Six of twelve
+and a workflow that reported success while its action node never ran. Seven of thirteen
 scenarios pass, and most were written expecting a failure, which is the only reason the
 findings are worth anything.
 

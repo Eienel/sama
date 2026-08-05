@@ -72,7 +72,7 @@ Read it back the way any other agent would, via `getValidationStatus`:
 
 ## What the score means
 
-**38 / 100**, tag `execution-reliability`, from 12 scenarios with 6 findings, 4 of them
+**38 / 100**, tag `execution-reliability`, from 13 scenarios with 6 findings, 4 of them
 HIGH.
 
 The formula is stated so the number is auditable rather than a vibe: the share of

@@ -138,7 +138,7 @@ happened when we leaned on it.</p>
           <p class="ev"><code>trace=[&#x27;trigger-1&#x27;]</code> <code>status=success</code></p></article>
 
 <h2>What held up</h2>
-<p class=lede>6 of 12 scenarios passed, and most were written expecting a failure.
+<p class=lede>7 of 13 scenarios passed, and most were written expecting a failure.
 Dedupe is atomic under concurrent retries. Idempotency keys are bound to payloads, so
 reuse with a changed payload is refused rather than silently returning a stale result.
 Reverts report as failures with a reason. Unaffordable sends are refused before

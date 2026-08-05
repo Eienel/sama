@@ -5,18 +5,30 @@
     "verdict": "FINDING",
     "detail": "Same transaction, two executions. The payloads differ only in a free-text `reason` field the model rewrote: observed verbatim from llama-3.3-70b and gpt-oss-120b at temperature 0.",
     "evidence": [
-      "0x2bmaswm8hvyf64myn9r",
-      "i41oy3em8vm436g7kfdw4"
+      "58pvvgnm1damecilfmj4m",
+      "7v75gh37hncm3vjuy1aap"
     ],
     "severity": "HIGH"
   },
   {
     "name": "semantic_key_fix",
-    "claim": "Hashing only the semantic surface survives prose drift",
+    "claim": "Hashing only the semantic surface keeps the key stable across prose drift",
     "verdict": "PASS",
-    "detail": "Both retries collapsed to one execution.",
+    "detail": "Both retries collapsed to one execution. Necessary but not sufficient: the body must be canonical too, which body_drift_conflict covers.",
     "evidence": [
-      "3asp0ypmgerj11vn39o7f"
+      "i8jhn9o1vt0vyn1hb8j7r"
+    ],
+    "severity": "-"
+  },
+  {
+    "name": "body_drift_conflict",
+    "claim": "A stable key with a drifting body fails closed rather than double-executing",
+    "verdict": "PASS",
+    "detail": "Drifted body was refused 409 idempotency_conflict citing originalExecutionId=wioh39u6bv2s2ar7qr0es, with no second transaction. The byte-identical retry replayed the same execution and carried idempotentReplay=true.",
+    "evidence": [
+      "wioh39u6bv2s2ar7qr0es",
+      "0x592a529c6e9adf4d50768a05b3fd9360a523bcd1f08c6225c9d139f7e7b9690f",
+      "wioh39u6bv2s2ar7qr0es"
     ],
     "severity": "-"
   },
@@ -26,8 +38,8 @@
     "verdict": "FINDING",
     "detail": "Two identical transfers, two executions. Duplicate protection is opt-in: an agent that never sets idempotency_key has none, and nothing warns it.",
     "evidence": [
-      "g225883zzojj3l8n3b6l5",
-      "rmpez3t6j7r9c6an4u13p"
+      "08wpkhkkg1m8kh47iv34v",
+      "2jtnuxgu60z5vfd0g1o2t"
     ],
     "severity": "MEDIUM"
   },
@@ -37,7 +49,7 @@
     "verdict": "PASS",
     "detail": "4 concurrent calls -> 1 execution, 3 rejected 409 'already being processed'. The dedupe is atomic under concurrency: the race is serialised server-side rather than racing through.",
     "evidence": [
-      "wwtdz4yiw7j4y94s4b5v5"
+      "cd21junhejrq6yayvmm2r"
     ],
     "severity": "-"
   },
@@ -47,8 +59,8 @@
     "verdict": "FINDING",
     "detail": "'0.001' and '0.0010' are the same transfer but hash differently, so even the semantic key double-spends unless amounts are normalized before hashing. A model re-emitting a number in another format is enough.",
     "evidence": [
-      "3asp0ypmgerj11vn39o7f",
-      "59n6kaz5mzub429mzrqwz"
+      "i8jhn9o1vt0vyn1hb8j7r",
+      "x27chuelhqvtrn96vdwb0"
     ],
     "severity": "MEDIUM"
   },
@@ -58,7 +70,7 @@
     "verdict": "PASS",
     "detail": "409 'Idempotency-Key was reused with a different request payload'. The key is bound to the payload, so a cross-chain reuse is rejected outright rather than silently suppressing a legitimate transfer. This is the Stripe semantic done correctly.",
     "evidence": [
-      "xqf8t4a8qbpnrlah9azls"
+      "geze3jqu233e3ybg9reqc"
     ],
     "severity": "-"
   },
@@ -66,11 +78,11 @@
     "name": "premise_staleness",
     "claim": "The premise an agent decided on still holds when its tx is included",
     "verdict": "FINDING",
-    "detail": "Decided at block 11395512 on the premise 'block <= 11395512'. Included at block 11395515, 3 block(s) later (33.4s). The premise was FALSE at inclusion and the transaction executed anyway. Simulation verifies feasibility, never justification, so this is invisible: the transaction succeeds and reports success.",
+    "detail": "Decided at block 11426536 on the premise 'block <= 11426536'. Included at block 11426538, 2 block(s) later (21.2s). The premise was FALSE at inclusion and the transaction executed anyway. Simulation verifies feasibility, never justification, so this is invisible: the transaction succeeds and reports success.",
     "evidence": [
-      "0xc24e1485111ce3a195003fb580688415b2c4c21d7b13250ebcdf63b01fb36b0a",
-      "decided@11395512",
-      "included@11395515"
+      "0x50fb1361fc101f2768472926501e60c06542b62843faf0d034c453753a31b172",
+      "decided@11426536",
+      "included@11426538"
     ],
     "severity": "MEDIUM"
   },
@@ -78,11 +90,11 @@
     "name": "conditional_staleness",
     "claim": "The condition gate documents that it is not atomic with the action",
     "verdict": "FINDING",
-    "detail": "Condition 'block <= 11395515' evaluated true at block 11395515; the action was included at block 11395516, 1 block(s) later, where it is false. KeeperHub's own read-condition-act primitive carries the gap it exists to remove. Off-chain check-then-act cannot be atomic, so this is inherent rather than a defect: the issue is that nothing says so. The name and shape of the primitive imply the condition gates the action, and an agent handed it reasonably assumes enforcement at execution. Documented, this is a caveat; undocumented, it is a trap. A real fix needs an on-chain guard that re-checks in the same transaction.",
+    "detail": "Condition 'block <= 11426538' evaluated true at block 11426538; the action was included at block 11426540, 2 block(s) later, where it is false. KeeperHub's own read-condition-act primitive carries the gap it exists to remove. Off-chain check-then-act cannot be atomic, so this is inherent rather than a defect: the issue is that nothing says so. The name and shape of the primitive imply the condition gates the action, and an agent handed it reasonably assumes enforcement at execution. Documented, this is a caveat; undocumented, it is a trap. A real fix needs an on-chain guard that re-checks in the same transaction.",
     "evidence": [
-      "0xca356ed7a91311c0718e41dbf0fa6c72556fc7ba1c31e5f797525a06a4f7fd5c",
-      "checked@11395515",
-      "executed@11395516"
+      "0xe1ef4a51efda21354e6141d41a954aba39e62d11dd0a5eaf4ff785089d343eed",
+      "checked@11426538",
+      "executed@11426540"
     ],
     "severity": "MEDIUM"
   },
@@ -90,9 +102,9 @@
     "name": "revert_reporting",
     "claim": "A call that will revert is reported as failed, not completed",
     "verdict": "PASS",
-    "detail": "Reported status='failed', error='Contract call failed: execution reverted (no data present; likely require(false)'. The failure surfaces.",
+    "detail": "Reported status='failed', error='Contract call failed: missing revert data (action=\"call\", data=null, reason=null'. The failure surfaces.",
     "evidence": [
-      "7ccvjh2joixat60rgaibb"
+      "lo5khgfpaatttec04vgk4"
     ],
     "severity": "-"
   },
@@ -102,7 +114,7 @@
     "verdict": "PASS",
     "detail": "status='failed', error='Insufficient ETH balance. Have: 0.05, Need: 1000000.0'. Failed cleanly; no nonce consumed.",
     "evidence": [
-      "r9nqbhd2wks1pzktkpk5j"
+      "2fqvn9genvyq4psnrbhnv"
     ],
     "severity": "-"
   },
@@ -123,9 +135,9 @@
     "verdict": "PASS",
     "detail": "All 5 concurrent transfers completed. Nonces are allocated and submitted correctly under parallel load, so a busy agent does not head-of-line block itself: the failure mode that freezes naive senders.",
     "evidence": [
-      "mkm6e2qzcsu1unj4xpvhh",
-      "kmknur9sf0sh7vcxyli2h",
-      "74hqdtj96o5l633blax92"
+      "0fevruia9lu7nvgcokyp9",
+      "9m3lg24166m26fqd2rdez",
+      "2mm1nt6fpc8l4tjd104rs"
     ],
     "severity": "-"
   }

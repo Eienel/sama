@@ -18,10 +18,44 @@ from __future__ import annotations
 import concurrent.futures
 import hashlib
 import json
+import os
 import time
 from dataclasses import dataclass, field
 
 from kh_client import call_tool
+
+REST = "https://app.keeperhub.com/api/execute"
+
+
+def _rest_transfer(body: dict, ikey: str | None = None) -> tuple[int, dict]:
+    """POST /api/execute/transfer directly, bypassing MCP.
+
+    The MCP layer builds the HTTP body from tool arguments, so it cannot be used to
+    test how the server treats two bodies that differ by one field: there is no way
+    to be sure what actually went on the wire. Idempotency is decided on a hash of
+    that body, so the test has to control it byte for byte.
+    """
+    import urllib.error
+    import urllib.request
+
+    key = os.environ.get("KEEPERHUB_API_KEY")
+    if not key:
+        raise RuntimeError("set KEEPERHUB_API_KEY")
+    headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json",
+               "User-Agent": "keeperhub-probe/1.0"}
+    if ikey:
+        headers["Idempotency-Key"] = ikey
+    req = urllib.request.Request(f"{REST}/transfer", data=json.dumps(body).encode(),
+                                 method="POST", headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r:
+            return r.status, json.loads(r.read().decode() or "{}")
+    except urllib.error.HTTPError as e:
+        raw = e.read().decode()
+        try:
+            return e.code, json.loads(raw)
+        except Exception:
+            return e.code, {"error": raw[:300]}
 
 SEPOLIA = "11155111"
 BASE_SEPOLIA = "84532"
@@ -109,7 +143,13 @@ def prose_drift(w: str) -> Result:
 
 
 def semantic_key_fix(w: str) -> Result:
-    """The proposed fix must actually hold on the same inputs that broke above."""
+    """The proposed fix must actually hold on the same inputs that broke above.
+
+    Scope: this tests the *key*, not the request. Both calls send the same effect
+    fields, so the bodies are byte-identical and the second replays. It does not
+    show that a body carrying the drifted prose would replay: it would not, because
+    the server hashes the body too. See body_drift_conflict for that half.
+    """
     before = {"action": "transfer", "chain_id": SEPOLIA, "to_address": w,
               "amount": "0.001", "token_address": "",
               "reason": "Accrued fees exceeded the threshold of 40 USDC"}
@@ -122,12 +162,69 @@ def semantic_key_fix(w: str) -> Result:
     same = a["executionId"] == b["executionId"]
     return Result(
         "semantic_key_fix",
-        "Hashing only the semantic surface survives prose drift",
+        "Hashing only the semantic surface keeps the key stable across prose drift",
         "PASS" if same else "FINDING",
-        "Both retries collapsed to one execution." if same else
+        "Both retries collapsed to one execution. Necessary but not sufficient: the "
+        "body must be canonical too, which body_drift_conflict covers." if same else
         "The proposed fix did not dedupe: the recommendation is wrong.",
         [a["executionId"]] if same else [a["executionId"], b["executionId"]],
         "-" if same else "HIGH",
+    )
+
+
+
+def body_drift_conflict(w: str) -> Result:
+    """A stable key with drifting prose in the body fails closed, not open.
+
+    semantic_key_fix proves the *key* survives reworded prose. It does not prove the
+    request replays, because the prose it varies is never sent: the effect fields are
+    identical on both calls. This sends the drifting field, which is what an agent
+    that puts a `reason` in its request body actually does.
+
+    KeeperHub hashes the request body as well as the key, so the second call cannot
+    replay. The question this scenario settles is which way it fails: a 409 (safe) or
+    a second transfer (a double-spend the stable key was supposed to prevent).
+    """
+    run_id = f"drift-{int(time.time())}"
+    parts = [run_id, "11155111", w.lower(), "0.001", ""]
+    key = hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()
+
+    b1 = {"chainId": 11155111, "recipientAddress": w, "amount": "0.001",
+          "reason": "Accrued fees exceeded the threshold of 40 USDC"}
+    b2 = dict(b1, reason="Accrued fees exceed threshold")
+
+    s1, r1 = _rest_transfer(b1, key)
+    s2, r2 = _rest_transfer(b2, key)
+    s3, r3 = _rest_transfer(b1, key)
+
+    first = r1.get("executionId")
+    conflicted = s2 == 409 and r2.get("code") == "idempotency_conflict"
+    no_second_tx = r2.get("transactionHash") is None
+    replayed = r3.get("executionId") == first and r3.get("idempotentReplay") is True
+
+    ok = conflicted and no_second_tx and replayed
+    detail = (
+        f"Drifted body was refused {s2} idempotency_conflict citing "
+        f"originalExecutionId={r2.get('originalExecutionId')}, with no second "
+        f"transaction. The byte-identical retry replayed the same execution and "
+        f"carried idempotentReplay=true."
+        if ok else
+        f"Expected a 409 conflict on the drifted body and a flagged replay on the "
+        f"identical one. Got {s2}/{r2.get('code')} then {s3}/"
+        f"idempotentReplay={r3.get('idempotentReplay')}."
+    )
+    evidence = [e for e in (first, r1.get("transactionHash"),
+                            r2.get("originalExecutionId")) if e]
+    if not ok and r2.get("executionId") and r2.get("executionId") != first:
+        evidence.append(r2["executionId"])
+
+    return Result(
+        "body_drift_conflict",
+        "A stable key with a drifting body fails closed rather than double-executing",
+        "PASS" if ok else "FINDING",
+        detail,
+        evidence,
+        "-" if ok else "HIGH",
     )
 
 
@@ -557,6 +654,7 @@ def parallel_distinct_transfers(w: str, n=5) -> Result:
 SCENARIOS = [
     prose_drift,
     semantic_key_fix,
+    body_drift_conflict,
     omitted_key,
     concurrent_same_key,
     amount_formatting,
