@@ -39,7 +39,33 @@ Reviewer **suisuss** requested changes. Five items, all addressed across commits
    framing, "not guaranteed byte-identical between calls even at temperature 0", is both
    stronger and true without measurement.
 
-Two corrections we made to ourselves during the revision, worth recording:
+## Second review round
+
+All five above accepted. One blocking gap left, and it was the outcome the section is
+about. Verified against source before acting on it, all three claims correct:
+
+- `lib/idempotency.ts:200` takes the `existing.requestHash !== requestHash` branch, and
+  `stableStringify` (`:45-57`) normalizes JSON key order only, never values. So a stable
+  key plus a byte-different body returns `409 idempotency_conflict`, **not** a replay.
+  The section was written for exactly that case and never named its outcome, so a reader
+  would treat the 409 as a broken key derivation and reach for a fresh key, which is the
+  one response that does double-execute.
+- `annotateReplay` (`:354-358`, applied `:370`) adds `idempotentReplay: true` to every
+  replayed object body. Our "no error, nothing to alert on" wording was wrong: the
+  replay is flagged, just easy to miss.
+- Our branch was 68 merges behind upstream `staging`, which is why neither
+  `annotateReplay` nor the `Recognising a replay` docs section existed in our base.
+  Merged `staging` in, resolved the two conflicts, and regenerated the coverage spec.
+
+The fix reframes the section honestly: a stable key does not buy you a replay, it buys
+you a fail-closed 409 instead of a double-spend, and the 409 carries
+`originalExecutionId` so it can be resolved by polling rather than retried around. Plus
+the mechanical items: literal separator stated, `taskId` escaping rule added, the full
+amount grammar spelled out so two implementations cannot disagree, UTF-8 bytes and
+lowercase hex named, per-endpoint key scope noted, "unique `Idempotency-Key`" dropped
+from the first-write sequence, and the canonical form moved to a fenced `text` block.
+
+Two corrections we made to ourselves during the first revision, worth recording:
 
 - We initially told the user the reviewer was wrong about the `chainId`/`network` alias.
   Wrong on the doc detail, right on the substance: `body.chainId ?? body.network` is
