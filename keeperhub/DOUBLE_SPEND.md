@@ -87,16 +87,32 @@ SEMANTIC = ("action", "chain_id", "to_address", "amount", "token_address")
 key = sha256(json.dumps({k: p[k] for k in SEMANTIC}, sort_keys=True)).hexdigest()
 ```
 
-Both payloads above collapse to one key under this derivation, and the second call
-dedupes.
+Both payloads above collapse to one key under this derivation. That is necessary but
+not sufficient, and the gap matters.
 
-Two things this does **not** fix, and which need separate mechanisms:
+KeeperHub hashes the request body as well as the key (`lib/idempotency.ts:200`, with
+`stableStringify` at `:45-57` normalizing JSON key order and never values). So a stable
+key only replays when the body is byte-equal too. If the drifting prose is actually sent
+in the body, the second call returns `409 idempotency_conflict`, not a replay.
 
-1. **A genuinely changed action.** Probe 1 also observed the agent choosing
+Our `semantic_key_fix` scenario reports PASS on the narrower case: it proves the key is
+stable across the two prose variants, but `_transfer` never puts `reason` on the wire,
+so both attempts sent identical bodies. It has not tested the case the fix exists for.
+
+The 409 is the safe outcome, and it is what stops the reconstructed retry executing
+twice. But it means the caller must canonicalize the **body** by the same rules, or omit
+the free-text field, rather than assuming a stable key is enough. Treat the 409 as an
+answer: it carries `originalExecutionId`, which resolves the outcome by polling.
+
+Three things this does **not** fix, and which need separate mechanisms:
+
+1. **A body that drifts along with the prose**, described above: a stable key alone
+   yields a 409 rather than a replay.
+2. **A genuinely changed action.** Probe 1 also observed the agent choosing
    `transfer` where it previously chose `contract_call`. The semantics really did
    change, so a semantic key correctly treats them as different: and you double-spend
    anyway. That needs premise re-checking at submission, not idempotency.
-2. **Agents that omit the key entirely.** It is optional, and nothing warns you.
+3. **Agents that omit the key entirely.** It is optional, and nothing warns you.
 
 ## Suggested changes to KeeperHub
 
@@ -104,8 +120,9 @@ Two things this does **not** fix, and which need separate mechanisms:
   request body when the caller is an LLM.
 - Consider server-side derivation from the semantic fields as a default when
   `idempotency_key` is absent, so the safe path is the default path.
-- Return a distinguishable response on a dedupe hit (e.g. `deduplicated: true`) so an
-  agent can tell "your retry was absorbed" from "a new execution ran".
+- ~~Return a distinguishable response on a dedupe hit (e.g. `deduplicated: true`) so an
+  agent can tell "your retry was absorbed" from "a new execution ran".~~ **Shipped
+  upstream** as `idempotentReplay: true`, added to every replayed object body.
 
 ## Reproducing
 
