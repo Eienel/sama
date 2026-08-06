@@ -39,12 +39,27 @@ Reputation is what a payer felt. Validation is what an independent checker verif
 
 Every transaction, including the publication itself, runs **through KeeperHub**.
 
-## Onboarding bounty submission
+## Onboarding UX: what we changed, not just what we complained about
 
-A docs PR on idempotency key derivation is **merged into KeeperHub**
-([#1877](https://github.com/KeeperHub/keeperhub/pull/1877)), after three review rounds.
+**A fix is merged into KeeperHub.** [#1877](https://github.com/KeeperHub/keeperhub/pull/1877)
+added a section to `docs/api/direct-execution.md` on deriving an idempotency key that
+survives a retry, through three review rounds, merged as `ef4913b`.
 
-[keeperhub/FRICTION.md](https://github.com/Eienel/sama/blob/main/keeperhub/FRICTION.md) documents six blockers between a fresh account and a first headless call, each with a proposed fix, plus seven issues written up ready to file:
+The gap it closes: the docs said the key is "any client-chosen string, ideally a UUID".
+That is right for a client replaying buffered bytes and wrong for one that reconstructs
+its request, because the reconstruction generates a new UUID and executes again. We hit
+this, reproduced the double-spend onchain, and the page now tells the next person how to
+avoid it.
+
+Review also corrected *us*, which is the part worth reading: a stable key with a reworded
+body returns `409 idempotency_conflict` rather than replaying. That is fail-closed and
+safe, but a caller expecting a replay reads the 409 as a broken key and reaches for a
+fresh one, which is the single response that does double-execute. The merged section now
+says so explicitly. `body_drift_conflict` in our harness verifies it against live
+infrastructure.
+
+The remaining friction, written up with a proposed fix for each in
+[keeperhub/FRICTION.md](https://github.com/Eienel/sama/blob/main/keeperhub/FRICTION.md):
 
 1. Onboarding step 3/3 offers only browser OAuth, which cannot complete in a container or CI, where agents actually run. The headless API-key path exists and works but appears in neither the wizard nor the official Claude plugin.
 2. The edge returns a bare **403 for the default Python user-agent**, which reads unmistakably as an invalid API key and sends you to re-issue credentials that were never wrong.
@@ -53,7 +68,16 @@ A docs PR on idempotency key derivation is **merged into KeeperHub**
 5. `ai_generate_workflow` returns `503 AI Prompt is disabled`, and it is the documented path for creating a workflow.
 6. Workflow validation rewards the vaguer node: adding `actionType` makes creation fail for a missing `abi`, so the *less* complete definition is the one that validates, and it is the one that silently does nothing.
 
-Roughly two hours from verified account to first successful call, essentially none of it about blockchain.
+Roughly two hours from verified account to first successful call, essentially none of it
+about blockchain. Items 1 and 2 account for most of it, and both are invisible to anyone
+who onboards in a browser, which is why they survived this long: the people who hit them
+are agents in containers and CI, and they cannot file bug reports.
+
+The through-line in all six: **the failure never says what is actually wrong.** A 403
+that means "wrong user-agent" reads as "bad API key". A workflow that validates and does
+nothing reads as success. A `503` on the documented path reads as "this feature is gone".
+Each cost real time not because the platform lacks the capability, but because the error
+pointed somewhere else.
 
 ## Try it in 60 seconds
 
