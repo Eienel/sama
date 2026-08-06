@@ -7,27 +7,33 @@ simulation, transaction and outcome, and nobody reads it back.
 This is a chaos harness that deliberately breaks agent execution through KeeperHub and
 reports what survives: with transaction hashes for every claim.
 
-**13 scenarios · 6 findings · 2 HIGH · 4 MEDIUM · 7 passes.** Every run executes real transactions
-on Ethereum Sepolia. Gas is sponsored and transfers are self-directed, so a full pass
-costs nothing and is repeatable indefinitely.
+<!--RUN-->
+**13 scenarios · 6 findings · 2 HIGH · 4 MEDIUM · 7 passes.** Every run executes real
+transactions on Ethereum Sepolia. Gas is sponsored and transfers are self-directed, so a
+full pass costs nothing and is repeatable indefinitely.
 
 ```
-scenario                    verdict   sev
 prose_drift                 FINDING   HIGH    payload-hash idempotency key drifts
-premise_staleness           FINDING   HIGH    premise false by the time tx lands
-conditional_staleness       FINDING   HIGH    KeeperHub's own guard is not atomic
 silent_noop_node            FINDING   HIGH    skipped action node reports success
-omitted_key                 FINDING   MEDIUM  duplicate protection is opt-in
 amount_formatting           FINDING   MEDIUM  our own fix needs value normalization
-semantic_key_fix            PASS      -       proposed fix survives prose drift
+conditional_staleness       FINDING   MEDIUM  KeeperHub's own guard is not atomic
+omitted_key                 FINDING   MEDIUM  duplicate protection is opt-in
+premise_staleness           FINDING   MEDIUM  premise false by the time tx lands
+body_drift_conflict         PASS      -       drifted body fails closed, not open
 concurrent_same_key         PASS      -       dedupe is atomic under races
 cross_chain_key_scope       PASS      -       key<->payload binding enforced
-revert_reporting            PASS      -       reverts reported honestly
 overdraft_transfer          PASS      -       no stuck nonce on unaffordable send
 parallel_distinct_transfers PASS      -       nonce ordering holds under load
+revert_reporting            PASS      -       reverts reported honestly
+semantic_key_fix            PASS      -       semantic key survives reworded prose
 ```
+<!--/RUN-->
 
-## The four HIGH findings
+## The findings
+
+Ordered by what survives a rebuttal, not by severity. The two staleness findings are
+rated MEDIUM deliberately: they are inherent to off-chain check-then-act, and calling
+them defects would overstate the case.
 
 **1. `conditional_staleness` (MEDIUM).** `execute_check_and_execute` is KeeperHub's own
 read-condition-act primitive. The condition is evaluated at one block and the action
@@ -56,22 +62,34 @@ agent-supplied. The textbook derivation is to hash the request body, but when th
 is an LLM that body contains model-authored prose which is not stable across a context
 loss. Two payloads differing only in a `reason` field produced two keys, two executions,
 two transactions onchain for one intended payment. The prose variants are verbatim
-output from `llama-3.3-70b` and `gpt-oss-120b` **at temperature 0**.
+output from `llama-3.3-70b` and `gpt-oss-120b` **at temperature 0**. Not a universal
+claim: `qwen3.6-27b` was perfectly stable across the same arms, so this is a property of
+particular models rather than of LLMs in general, and `probe1/RESULTS.md` records the
+stronger cross-model claim we withdrew.
 
 **4. `premise_staleness`**: the same staleness gap in hand-rolled read-then-act.
+
+**5. `omitted_key`** (MEDIUM): `idempotency_key` is optional, so the default path is the
+unprotected one and nothing warns a caller running without it.
+
+**6. `amount_formatting`** (MEDIUM): a finding against *our own* proposed fix, not against
+KeeperHub. `"0.001"` and `"0.0010"` are the same transfer and hash differently, so a
+semantic key is necessary and not sufficient: values must be normalized before hashing.
 
 Findings 1/2/4 and 3 are *different mechanisms*: one is the world moving underneath the
 agent, the other is the agent forgetting its own words. Neither fix addresses the other.
 
 ## What KeeperHub gets right
 
-Six scenarios pass, and five were written expecting a failure. That ratio is the point -
+Seven scenarios pass, and most were written expecting a failure. That ratio is the point:
 this is a test suite, not a hit piece.
 
 Dedupe is atomic under concurrency (parallel calls are rejected `409`, not raced
 through). Keys are bound to payloads, so reuse with a changed payload is refused rather
 than silently returning a stale result. Reverts report `status='failed'` with a reason.
-Unaffordable sends are refused before submission with no nonce consumed. Five concurrent
+Unaffordable sends are refused before submission with no nonce consumed. A stable key
+sent with a reworded body fails closed, refused `409 idempotency_conflict` with no second
+transfer, rather than quietly executing twice. Five concurrent
 transfers all land, so a busy agent does not head-of-line block itself.
 
 ## Layout
