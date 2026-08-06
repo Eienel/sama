@@ -82,6 +82,23 @@ rather than through an SDK: which is exactly what the headless path forces you t
 `contract_address`. The validation error is clear once you hit it, but the surrounding
 docs and workflow JSON use camelCase, so the first attempt reliably fails.
 
+## 6. Filling in more fields makes workflow creation fail
+
+Not a blocker to a first call, but the sharpest footgun found, and it belongs here
+rather than in a bug report because it is about what the platform teaches a newcomer.
+
+An action node without `actionType` is accepted. Add `actionType` and creation rejects
+the workflow for a missing `abi`, even though `execute_contract_call` auto-fetches an
+ABI perfectly well (see "What went right" below). The vaguer definition is the one that
+validates.
+
+A newcomer who fills in more fields gets an error, backs off to the version that was
+accepted, and ships a workflow that reports success forever without ever running its
+action. The tooling rewarded being less specific, and the reward was silent.
+
+**Fix:** require `actionType` at creation and auto-fetch the `abi` in the workflow
+validator, so the more complete definition is also the accepted one.
+
 ## What went right
 
 - The API key worked instantly once obtained, with `mcp:read mcp:write mcp:admin`.

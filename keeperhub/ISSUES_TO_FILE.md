@@ -81,16 +81,39 @@ validation complaint. Execute it:
 
 The action node is absent from the trace. It never ran. The run reports success.
 
-The incentive runs backwards: adding `actionType` makes creation reject the workflow
-for a missing `abi`, so the *less* complete definition passes and does nothing while
-the more complete one is caught.
-
 For a platform whose value is reliability, a green run for an automation that never
 executed is worse than an error: an agent polling status sees success, the audit trail
 records success, and nothing alerts.
 
-**Proposed fix:** reject a node without `actionType` at creation, or mark the execution
-`partial`/`failed` when a node in the graph is skipped.
+**Proposed fix:** mark the execution `partial`/`failed` when a node in the graph is
+skipped, so the run's status reflects what actually ran.
+
+The validation asymmetry that produces this workflow in the first place is a separate
+concern with a separate fix: see issue 3b.
+
+---
+
+## 3b. Workflow validation rewards the less complete definition
+
+**Title:** `Adding actionType makes creation fail, so the vaguer node is the one that validates`
+
+Filed separately from issue 3 because the fixes land in different places. Issue 3 is
+about how a skipped node is *reported*; this is about which definitions get *accepted*.
+
+A node omitting `actionType` passes creation. Adding `actionType` makes creation reject
+the workflow for a missing `abi`. So the *less* complete definition validates and the
+more complete one is caught, and a builder who fills in more fields is punished for it.
+
+The failure mode this creates is not a wrong error message. It is that the path of least
+resistance produces a workflow that runs green forever and does nothing, and the builder
+who tried harder got an error and went back to the version that "worked".
+
+**Proposed fix:** require `actionType` at creation, and auto-fetch the `abi` in the
+workflow validator the way `execute_contract_call` already does, so the complete
+definition is also the accepted one.
+
+Raised by [@emmanuelist](https://github.com/emmanuelist), who pointed out this half was
+buried inside the skipped-node report and deserves its own filing.
 
 ---
 

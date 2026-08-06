@@ -44,13 +44,14 @@ Every transaction, including the publication itself, runs **through KeeperHub**.
 A docs PR on idempotency key derivation is **merged into KeeperHub**
 ([#1877](https://github.com/KeeperHub/keeperhub/pull/1877)), after three review rounds.
 
-[keeperhub/FRICTION.md](https://github.com/Eienel/sama/blob/main/keeperhub/FRICTION.md) documents five blockers between a fresh account and a first headless call, each with a proposed fix, plus six issues written up ready to file:
+[keeperhub/FRICTION.md](https://github.com/Eienel/sama/blob/main/keeperhub/FRICTION.md) documents six blockers between a fresh account and a first headless call, each with a proposed fix, plus seven issues written up ready to file:
 
 1. Onboarding step 3/3 offers only browser OAuth, which cannot complete in a container or CI, where agents actually run. The headless API-key path exists and works but appears in neither the wizard nor the official Claude plugin.
 2. The edge returns a bare **403 for the default Python user-agent**, which reads unmistakably as an invalid API key and sends you to re-issue credentials that were never wrong.
 3. The silent no-op above.
 4. `web3/read-contract` hard-requires an `abi` its own schema describes as auto-fetched, while `execute_contract_call` auto-fetches correctly.
 5. `ai_generate_workflow` returns `503 AI Prompt is disabled`, and it is the documented path for creating a workflow.
+6. Workflow validation rewards the vaguer node: adding `actionType` makes creation fail for a missing `abi`, so the *less* complete definition is the one that validates, and it is the one that silently does nothing.
 
 Roughly two hours from verified account to first successful call, essentially none of it about blockchain.
 

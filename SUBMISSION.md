@@ -47,7 +47,7 @@ here. The ERC-8004 Validation Registry is unused by KeeperHub and, as far as we 
 tell, by everyone else.
 
 **Integration quality and DX.** One command runs the whole pipeline. The scoreboard is
-generated from run output so it cannot drift. `keeperhub/FRICTION.md` documents five
+generated from run output so it cannot drift. `keeperhub/FRICTION.md` documents six
 onboarding blockers with fixes, which is also the bounty submission.
 
 ## Demo video script (about 3 minutes)
@@ -135,6 +135,8 @@ The remainder, ready to file as issues:
    API key.
 3. An action node missing `actionType` is accepted and silently skipped while the run
    reports success.
+3b. Workflow validation rewards the vaguer node: adding `actionType` makes creation fail
+   for a missing `abi`, so the less complete definition is the one that validates.
 4. `web3/read-contract` hard-requires an `abi` its own schema describes as
    auto-fetched, while `execute_contract_call` auto-fetches correctly.
 5. `ai_generate_workflow` returns `503 AI Prompt is disabled`, and it is the documented
