@@ -17,16 +17,19 @@ The incentive runs backwards: adding `actionType` makes creation reject the work
 
 Two transactions, one intended payment, no error. Only the free-text `reason` field differed.
 
+Not a universal claim: `qwen3.6-27b` was perfectly stable across the same arms, so this is a property of particular models rather than of LLMs in general.
+
 **Staleness in read-then-act**, including in `execute_check_and_execute`: the condition is evaluated at one block and the action lands at the next. We rate this MEDIUM, not HIGH, because off-chain check-then-act cannot be atomic. It is inherent. The issue is that nothing says so.
 
 ## What KeeperHub gets right
 
-Stated first because five of these scenarios were written expecting a failure:
+Stated first because most of these scenarios were written expecting a failure:
 
 - Dedupe is **atomic under concurrency**: parallel calls with one key are rejected 409, not raced through
 - Keys are **bound to payloads**: reuse with a changed payload is refused, not silently answered from cache
 - Reverts report `status: failed` **with the reason attached**
 - Unaffordable sends are refused before submission with **no nonce consumed**, so one bad send cannot head-of-line block the wallet
+- A stable key sent with a **reworded body fails closed**: refused `409 idempotency_conflict` with no second transfer, rather than quietly executing twice
 
 ## Published onchain
 
@@ -50,8 +53,8 @@ That PR is worth naming here for one reason: review corrected *us*. A stable ide
 key sent with a reworded body returns `409 idempotency_conflict` rather than replaying.
 Fail-closed and safe, but a caller expecting a replay reads the 409 as a broken key and
 reaches for a fresh one, which is the single response that does double-execute.
-`body_drift_conflict` verifies this against live infrastructure and is one of the seven
-passes above.
+`body_drift_conflict` verifies this against live infrastructure, and is one of the passes
+in the scoreboard above.
 
 ## Try it in 60 seconds
 
@@ -70,6 +73,8 @@ The comparison is the interesting part, since the question a builder has is not 
     premise_staleness    FINDING/M     FINDING/M
     revert_reporting     PASS          PASS
     passed               1/7           3/7
+
+That is a separate, smaller scenario set from the 13 above, because it has to run against providers other than KeeperHub.
 
 Note what does **not** improve. Prose drift and staleness are findings on both, because they are properties of how the caller derives keys and reads state, not of who submits the transaction.
 
