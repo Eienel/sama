@@ -50,7 +50,7 @@ Worth stating first, because two of these were scenarios written expecting a fai
 - **Body drift fails closed.** A stable key sent with a reworded `reason` field does not
   quietly execute twice: the server hashes the body as well as the key, so the second
   call is refused `409 idempotency_conflict` citing the original execution id, and the
-  byte-identical retry replays it flagged `idempotentReplay: true`. This is the outcome
+  identical retry replays it flagged `idempotentReplay: true`. This is the outcome
   a caller should design for, and `body_drift_conflict` confirms it live.
 - **Failures are reported honestly.** A reverting ERC20 transfer reports
   `status='failed'` with the revert reason attached, rather than the far more

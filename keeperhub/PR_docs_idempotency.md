@@ -1,6 +1,6 @@
 # PR: document how to choose an idempotency key when the caller is an LLM
 
-**Filed:** [KeeperHub/keeperhub#1877](https://github.com/KeeperHub/keeperhub/pull/1877)
+**Merged.** [KeeperHub/keeperhub#1877](https://github.com/KeeperHub/keeperhub/pull/1877), merged as `ef4913b` into `staging`
 **File:** `docs/api/direct-execution.md`, base `staging`, head `Eienel:docs-idempotency-llm-agents`
 **Final section:** `PR_SECTION.md` in this directory, kept in sync with the PR branch.
 
@@ -88,3 +88,34 @@ payload was rejected `409 idempotency_conflict` rather than answered from cache.
 is only that nothing tells the caller how to derive a key that stays stable.
 
 Method and full results: `DOUBLE_SPEND.md`, `../probe1/RESULTS.md`.
+
+## Third round, and the merge
+
+The blocking item was one we had got wrong in the opposite direction from usual: the
+section told the caller to poll `originalExecutionId`, but that field is nullable, and it
+is null in exactly the two cases the paragraph was written for. `lib/idempotency.ts:40`
+types it `string | null`; a prior attempt that broadcast and failed finalizes through
+`:269-276`, which hardcodes `resourceId: null`, and an attempt still in flight has not
+written it at all, because the conflict check at `:200-201` precedes the completed/failed
+check at `:206`. So an agent whose transfer reverted, that reworded its memo and retried,
+got a 409 with nothing to poll and had been told not to rotate the key.
+
+Two smaller ones: "byte-equal" and "byte-for-byte" were stricter than the implementation,
+since the body is hashed after parsing, so only string values keep their exact spelling.
+And the amount rules still let two implementations disagree on zero, because
+strip-leading-zeros and strip-trailing-zeros fight over `0` and `0.0` depending on order.
+
+suisuss pushed the remaining work to the branch directly rather than sending the review
+back, because it needed a `pnpm check:api-docs` run a fork cannot easily do: `aa12697`
+merged `staging` again (the status route had moved to 536), and `d66a095` applied the
+three items. They also corrected their own earlier advice: `:204-212` replays a *failed*
+record as well as a completed one, so the right remedy is to canonicalize the body and
+re-send under the same key rather than to poll a locally recorded id.
+
+Their closing note on the previous round: "your last round was accurate on every point it
+claimed, including the `chainId ?? network` alias resolution and the 409-not-a-replay
+framing, both of which I verified independently."
+
+The post-merge `cleanup` job failed on `Configure AWS credentials: Input required and not
+supplied: aws-region`. That is a PR-environment teardown workflow, unrelated to a docs
+change.

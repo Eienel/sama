@@ -117,11 +117,11 @@ mechanism and timestamps the verdict; it is not yet a third-party score.
 
 ## Contribution to KeeperHub
 
-**Filed: [KeeperHub/keeperhub#1877](https://github.com/KeeperHub/keeperhub/pull/1877)**, a docs
+**Merged: [KeeperHub/keeperhub#1877](https://github.com/KeeperHub/keeperhub/pull/1877)**, a docs
 PR adding a section on deriving an idempotency key that survives a retry. Additive, one
 file, +103 lines, no behaviour change. It establishes that KeeperHub's dedupe is correct
 given a stable key, because it is: the gap is that nothing tells the caller how to
-derive one that stays stable. Two review rounds, both addressed
+derive one that stays stable. Three review rounds, all addressed, merged as `ef4913b`
 (`keeperhub/PR_docs_idempotency.md` records what changed and why). The second round
 changed our own understanding: a stable key with a reworded body returns
 `409 idempotency_conflict` rather than replaying, which is the safe direction and is now

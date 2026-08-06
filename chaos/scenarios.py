@@ -146,7 +146,7 @@ def semantic_key_fix(w: str) -> Result:
     """The proposed fix must actually hold on the same inputs that broke above.
 
     Scope: this tests the *key*, not the request. Both calls send the same effect
-    fields, so the bodies are byte-identical and the second replays. It does not
+    fields, so the bodies are value-identical and the second replays. It does not
     show that a body carrying the drifted prose would replay: it would not, because
     the server hashes the body too. See body_drift_conflict for that half.
     """
@@ -181,8 +181,8 @@ def body_drift_conflict(w: str) -> Result:
     identical on both calls. This sends the drifting field, which is what an agent
     that puts a `reason` in its request body actually does.
 
-    KeeperHub hashes the request body as well as the key, so the second call cannot
-    replay. The question this scenario settles is which way it fails: a 409 (safe) or
+    KeeperHub hashes the request body as well as the key (after parsing, so formatting
+    normalizes but string values keep their spelling), so the second call cannot replay. The question this scenario settles is which way it fails: a 409 (safe) or
     a second transfer (a double-spend the stable key was supposed to prevent).
     """
     run_id = f"drift-{int(time.time())}"
@@ -206,7 +206,7 @@ def body_drift_conflict(w: str) -> Result:
     detail = (
         f"Drifted body was refused {s2} idempotency_conflict citing "
         f"originalExecutionId={r2.get('originalExecutionId')}, with no second "
-        f"transaction. The byte-identical retry replayed the same execution and "
+        f"transaction. The identical retry replayed the same execution and "
         f"carried idempotentReplay=true."
         if ok else
         f"Expected a 409 conflict on the drifted body and a flagged replay on the "

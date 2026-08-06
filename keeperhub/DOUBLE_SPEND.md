@@ -92,7 +92,9 @@ not sufficient, and the gap matters.
 
 KeeperHub hashes the request body as well as the key (`lib/idempotency.ts:200`, with
 `stableStringify` at `:45-57` normalizing JSON key order and never values). So a stable
-key only replays when the body is byte-equal too. If the drifting prose is actually sent
+key only replays when the body is value-equal too. The body is hashed after parsing, so
+formatting normalizes and only string values keep their exact spelling. If the drifting
+prose is actually sent
 in the body, the second call returns `409 idempotency_conflict`, not a replay.
 
 Our `semantic_key_fix` scenario reports PASS on the narrower case: it proves the key is

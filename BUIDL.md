@@ -41,6 +41,9 @@ Every transaction, including the publication itself, runs **through KeeperHub**.
 
 ## Onboarding bounty submission
 
+A docs PR on idempotency key derivation is **merged into KeeperHub**
+([#1877](https://github.com/KeeperHub/keeperhub/pull/1877)), after three review rounds.
+
 [keeperhub/FRICTION.md](https://github.com/Eienel/sama/blob/main/keeperhub/FRICTION.md) documents five blockers between a fresh account and a first headless call, each with a proposed fix, plus six issues written up ready to file:
 
 1. Onboarding step 3/3 offers only browser OAuth, which cannot complete in a container or CI, where agents actually run. The headless API-key path exists and works but appears in neither the wizard nor the official Claude plugin.
