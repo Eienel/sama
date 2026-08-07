@@ -51,8 +51,10 @@ ready-to-file issue in
 
 1. **Onboarding dead-ends at step 3/3 without a local browser.** The wizard offers only
    OAuth sign-in, which cannot complete in a container or CI, which is where agents
-   actually run. The headless API-key path exists and works, and appears in neither the
-   wizard nor the official Claude plugin.
+   actually run. **Partly fixed since I wrote this**: KeeperHub shipped
+   `docs/api/headless-onboarding.md` (#1908, v2.88.0), which documents the headless path
+   properly. It was authored before my PR merged, so it is their work, not a result of
+   this report. The wizard and the official Claude plugin still offer only OAuth.
 2. **The edge returns a bare 403 for the default Python user-agent.** No body, no
    explanation. It reads unmistakably as an invalid API key and sends you to re-issue
    credentials that were never wrong. Verified by reproducing it with `curl -A`.

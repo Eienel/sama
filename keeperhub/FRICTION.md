@@ -31,6 +31,13 @@ onboarding and from the plugin, which are the two places a new user actually loo
 > **Fix:** add "no browser? use an API key" to step 3, and support
 > `KEEPERHUB_API_KEY` in the plugin.
 
+**Update, 7 August 2026:** KeeperHub shipped `docs/api/headless-onboarding.md`
+(PR #1908, released in v2.88.0) covering SIWE sign-in without a browser, creating an
+organization API key programmatically, funding the right wallet, and gas. That closes the
+documentation half of this item. Authored 4 August, before our PR merged, so this is
+KeeperHub's own work and not a result of this write-up. The wizard itself still offers
+only OAuth at step 3/3, so the in-product half stands.
+
 ## 2. The API-keys page has no discoverable URL
 
 Docs say "Settings > API Keys > Organisation tab". From a fresh account stuck in the
