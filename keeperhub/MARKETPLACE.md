@@ -68,7 +68,7 @@ call_workflow {"slug":"premise-freshness-check","inputs":{}}
 
 ## The competitive picture
 
-20 listings, priced $0.01-$0.05 per call (ours is currently free). Several are directly
+20 listings, priced $0.01-$0.05 per call, ours at $0.01. Several are directly
 adjacent to this project's findings:
 
 - **`assay-verify`**: "given an intent hash, reports whether the agent committed to
@@ -106,7 +106,7 @@ workflow node hard-requires one, despite its own schema describing the field as
 `call_workflow` returns a feedback prompt inviting the caller to rate the workflow on
 an **ERC-8004 ReputationRegistry**, signed by the caller's wallet and submitted onchain.
 
-That is an onchain reputation surface for agent-to-agent workflow calls, and it is
-currently attached to a marketplace with one listing. It is the natural place for the
+That is an onchain reputation surface for agent-to-agent workflow calls, attached to a
+marketplace that already has real paid traffic. It is the natural place for the
 reliability evidence this harness produces to land: scores backed by executed
 transactions rather than self-reported claims.
