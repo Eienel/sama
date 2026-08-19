@@ -2,7 +2,7 @@
 
 KeeperHub is the execution and reliability layer for onchain agents. Nothing currently
 lets anyone *check* that reliability claim: the audit trail records every trigger,
-simulation, transaction and outcome, and nobody reads it back.
+simulation, transaction and outcome, and nobody reads it back
 
 This is a chaos harness that deliberately breaks agent execution through KeeperHub and
 reports what survives: with transaction hashes for every claim.
