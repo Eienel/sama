@@ -50,9 +50,14 @@ agent settles directly to us onchain.
 Note the setting order: `priceUsdcPerCall` is only accepted while the workflow is
 unlisted, so pricing an existing listing means unlist, price, relist.
 
-**Honest limit:** we are the seller side. Paying our own endpoint end to end needs real
-USDC in the agentic wallet on Base, which we have not funded, so the buyer half is
-unexercised.
+**It has been paid.** Two invocations from an external caller (`0x28F3...1ae7`, not our
+wallet), $0.02 USDC gross, settled on Base. Small, but it is real demand rather than a
+demonstration: someone found the listing, paid the x402 challenge, and the settlement
+cleared.
+
+**Honest limit:** we have still only exercised the *seller* side ourselves. We never
+funded USDC in our own agentic wallet, so we have not driven a payment outward through
+x402 as a buyer.
 
 Called the way an external agent would:
 

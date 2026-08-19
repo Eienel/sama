@@ -81,6 +81,6 @@ Note what does **not** improve. Prose drift and staleness are findings on both, 
 ## Honest limitations
 
 - The ERC-8004 record is attached to agent 9139, **an identity we minted ourselves**. It is not a third-party rating of KeeperHub's agent, which is 31875 on mainnet and does not exist on Sepolia. It demonstrates the mechanism and timestamps our verdict.
-- We are the **seller** side of x402 (a listing on Base at 0.01 USDC). The buyer half is untested.
+- We are the **seller** side of x402 (a listing on Base at 0.01 USDC), and it has taken two paid invocations from an external caller, settled on Base. We have not driven a payment outward as a buyer.
 - The agent chooses among a fixed probe set. It selects and interprets; it does not invent new probes.
 - Sepolia, not mainnet.

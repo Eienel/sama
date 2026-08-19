@@ -105,11 +105,12 @@ mechanism and timestamps the verdict; it is not yet a third-party score.
   be atomic. The defensible claim is that it is undocumented and the primitive's name
   implies a guarantee it cannot give. We rated these HIGH initially and that was wrong;
   they are MEDIUM documentation gaps.
-- **The marketplace listing is thin.** It returns a block height for 0.01 USDC. It
-  proves the x402 plumbing works, not that anyone would buy it.
+- **The marketplace listing is thin**, though not unsold: it returns a block height for
+  0.01 USDC and has taken two paid invocations from an external caller, settled on Base.
+  Two calls is evidence the plumbing works end to end, not evidence of a market.
 - Sepolia, not mainnet. The registries are the same code at canonical testnet proxies.
-- We are the seller side of x402. The buyer half needs USDC on Base, which we did not
-  fund.
+- We have only ever been the seller side of x402. Driving a payment outward as a buyer
+  needs USDC in our own agentic wallet on Base, which we did not fund.
 - The agent reasons over a fixed probe set. It chooses and interprets, it does not
   invent new probes.
 - The validated subject is an identity we minted. Validating third parties is the same
